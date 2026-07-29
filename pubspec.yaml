@@ -1,0 +1,53 @@
+name: garageflow_mobile
+description: >-
+  GarageFlow for phones. One app, two audiences: mechanics work the jobs
+  assigned to them, customers book services and follow their vehicle.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # HTTP. Chosen over `http` for interceptors — the access-token refresh in
+  # core/api_client.dart is one interceptor rather than a wrapper hand-written
+  # around every call site.
+  dio: ^5.7.0
+
+  # Tokens go to the Keychain / EncryptedSharedPreferences. SharedPreferences
+  # is plain text on a rooted device and has no business holding a refresh
+  # token.
+  flutter_secure_storage: ^9.2.2
+
+  # State. ChangeNotifier ships with Flutter and is enough for this app;
+  # provider only supplies the plumbing to reach it down the widget tree.
+  provider: ^6.1.2
+
+  # Camera and gallery, for job photos.
+  image_picker: ^1.1.2
+
+  # Dates and Rs formatting, so the app agrees with the dashboard.
+  intl: ^0.20.2
+
+  # Maps. OpenStreetMap tiles through flutter_map — the same source the
+  # dashboard uses via Leaflet, so a pin looks the same on both. No API key, no
+  # billing account, and nothing to configure per platform, which is why it was
+  # chosen over google_maps_flutter.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Hands a location off to whatever map app the phone has, for turn-by-turn.
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
