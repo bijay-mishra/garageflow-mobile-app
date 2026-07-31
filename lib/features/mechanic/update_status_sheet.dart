@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../services/mechanic_service.dart';
@@ -63,6 +64,10 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     final unchanged = _status == widget.job.status &&
         _note.text.trim().isEmpty &&
         (int.tryParse(_odometer.text.trim()) ?? widget.job.odometer) ==
@@ -85,7 +90,7 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
                   width: 38,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.ink200,
+                    color: palette.border,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -93,13 +98,13 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
               const SizedBox(height: 18),
 
               Text(
-                'Update status',
+                t('job.updateStatus'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 3),
               Text(
                 '${widget.job.vehiclePlate} · ${widget.job.id}',
-                style: const TextStyle(fontSize: 13, color: AppTheme.ink500),
+                style: TextStyle(fontSize: 13, color: palette.faint),
               ),
               const SizedBox(height: 20),
 
@@ -123,13 +128,13 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  labelText: 'Odometer (km)',
+                  labelText: t('status.odometer'),
                   hintText: '${widget.job.odometer}',
                   prefixIcon: const Icon(Icons.speed_rounded, size: 20),
-                  helperText: 'Optional — recorded against the vehicle too',
-                  helperStyle: const TextStyle(
+                  helperText: t('status.odometerHelp'),
+                  helperStyle: TextStyle(
                     fontSize: 11.5,
-                    color: AppTheme.ink400,
+                    color: palette.faint,
                   ),
                 ),
               ),
@@ -140,14 +145,14 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  labelText: 'Work note',
-                  hintText: 'Ordered front pads, waiting on delivery…',
+                decoration: InputDecoration(
+                  labelText: t('status.workNote'),
+                  hintText: t('status.workNoteHint'),
                   alignLabelWithHint: true,
-                  helperText: 'Optional — added to the job card',
+                  helperText: t('status.workNoteHelp'),
                   helperStyle: TextStyle(
                     fontSize: 11.5,
-                    color: AppTheme.ink400,
+                    color: palette.faint,
                   ),
                 ),
               ),
@@ -164,13 +169,13 @@ class _UpdateStatusSheetState extends State<UpdateStatusSheet> {
                           valueColor: AlwaysStoppedAnimation(Colors.white),
                         ),
                       )
-                    : Text(unchanged ? 'Nothing to save' : 'Save'),
+                    : Text(unchanged ? t('status.nothingToSave') : 'Save'),
               ),
               const SizedBox(height: 6),
               Text(
-                'The customer is notified when the status changes.',
+                t('status.notified'),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11.5, color: AppTheme.ink400),
+                style: TextStyle(fontSize: 11.5, color: palette.faint),
               ),
             ],
           ),
@@ -193,6 +198,8 @@ class _StatusOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
     final color = AppTheme.statusColor(status);
 
     return Material(
@@ -207,7 +214,7 @@ class _StatusOption extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             border: Border.all(
-              color: selected ? color : AppTheme.ink200,
+              color: selected ? color : palette.border,
               width: selected ? 1.6 : 1,
             ),
           ),
@@ -225,7 +232,7 @@ class _StatusOption extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected ? color : AppTheme.ink700,
+                    color: selected ? color : palette.muted,
                   ),
                 ),
               ),

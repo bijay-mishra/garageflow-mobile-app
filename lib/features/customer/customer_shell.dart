@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/notification_controller.dart';
 import '../mechanic/mechanic_shell.dart' show NotificationBadge;
 import '../notifications/notifications_screen.dart';
-import '../shared/account_screen.dart';
+import '../profile/profile_screen.dart';
 import 'bills_screen.dart';
 import 'customer_home_screen.dart';
 import 'service_history_screen.dart';
@@ -27,37 +28,41 @@ class _CustomerShellState extends State<CustomerShell> {
     ServiceHistoryScreen(),
     BillsScreen(),
     NotificationsScreen(),
-    AccountScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     final unread = context.watch<NotificationController>().unreadCount;
 
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.ink200)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: palette.border)),
         ),
         child: BottomNavigationBar(
           currentIndex: _index,
           onTap: (index) => setState(() => _index = index),
           items: [
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.directions_car_outlined),
               activeIcon: Icon(Icons.directions_car_rounded),
-              label: 'My vehicles',
+              label: t('tab.myVehicles'),
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.history_rounded),
               activeIcon: Icon(Icons.history_rounded),
-              label: 'History',
+              label: t('tab.history'),
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long_outlined),
               activeIcon: Icon(Icons.receipt_long_rounded),
-              label: 'Bills',
+              label: t('tab.bills'),
             ),
             BottomNavigationBarItem(
               icon: NotificationBadge(
@@ -68,12 +73,12 @@ class _CustomerShellState extends State<CustomerShell> {
                 count: unread,
                 child: const Icon(Icons.notifications_rounded),
               ),
-              label: 'Alerts',
+              label: t('tab.alerts'),
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded),
-              label: 'Account',
+              label: t('tab.account'),
             ),
           ],
         ),

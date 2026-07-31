@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- brand-700, the middle stop of the app's header gradient. Flat rather
+         than a gradient drawable: the launcher may scale and parallax this
+         layer, and a gradient shifts oddly when it does. -->
+    <color name="ic_launcher_background">#1D4ED8</color>
+</resources>

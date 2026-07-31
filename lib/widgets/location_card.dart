@@ -144,7 +144,7 @@ class LocationCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.ink500,
+                      color: AppTheme.ink400,
                     ),
                   ),
               ],

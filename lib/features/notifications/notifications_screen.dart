@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/app_notification.dart';
 import '../../state/auth_controller.dart';
 import '../../state/notification_controller.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import '../customer/customer_job_detail_screen.dart';
 import '../mechanic/mechanic_job_detail_screen.dart';
@@ -20,17 +22,23 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final controller = context.watch<NotificationController>();
     final isMechanic = context.watch<AuthController>().user?.isMechanic == true;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
+      appBar: GradientAppBar(
+        title: t('alerts.title'),
         actions: [
           if (controller.hasUnread)
             TextButton(
               onPressed: controller.markAllRead,
-              child: const Text('Mark all read'),
+              // The theme paints text buttons brand blue, which is the same
+              // blue as the gradient behind this one. Overridden rather than
+              // left to inherit.
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              child: Text(t('alerts.markAllRead')),
             ),
           const SizedBox(width: 6),
         ],
@@ -47,14 +55,13 @@ class NotificationsScreen extends StatelessWidget {
             : controller.items.isEmpty
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
+                children: [
                   SizedBox(height: 90),
                   EmptyView(
                     icon: Icons.notifications_none_rounded,
-                    title: 'Nothing yet',
+                    title: t('alerts.emptyTitle'),
                     message:
-                        'Updates about your jobs and bookings will appear '
-                        'here.',
+                        t('alerts.emptyMessage'),
                   ),
                 ],
               )
@@ -114,11 +121,13 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
     final color = switch (notification.kind) {
       'job' => AppTheme.brand,
       'booking' => AppTheme.emerald,
       'invoice' => AppTheme.violet,
-      _ => AppTheme.ink500,
+      _ => palette.faint,
     };
 
     return Dismissible(
@@ -167,24 +176,24 @@ class _NotificationTile extends StatelessWidget {
                           fontWeight: notification.isRead
                               ? FontWeight.w600
                               : FontWeight.w800,
-                          color: AppTheme.ink900,
+                          color: palette.text,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         notification.body,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.ink500,
+                          color: palette.faint,
                           height: 1.35,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         Fmt.timeAgo(notification.createdAt),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
-                          color: AppTheme.ink400,
+                          color: palette.faint,
                         ),
                       ),
                     ],

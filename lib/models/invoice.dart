@@ -102,6 +102,11 @@ class Workshop {
     required this.longitude,
     required this.openingHours,
     required this.onlineProviders,
+    required this.bankName,
+    required this.bankAccountName,
+    required this.bankAccountNumber,
+    required this.bankBranch,
+    required this.canBankTransfer,
   });
 
   final String name;
@@ -121,6 +126,20 @@ class Workshop {
   /// button per entry, so a shop with no Khalti key never shows a Khalti button.
   final List<String> onlineProviders;
 
+  // ── Bank transfer ──────────────────────────────────────────────────────
+  // Not a gateway. The app shows these, the customer moves the money in
+  // their own banking app, and a staff member confirms it against the
+  // statement — which is why the bill stays unpaid until they do.
+
+  final String bankName;
+  final String bankAccountName;
+  final String bankAccountNumber;
+  final String bankBranch;
+
+  /// False when the workshop has not filled in an account, in which case
+  /// the option is hidden rather than shown with an empty number.
+  final bool canBankTransfer;
+
   bool get hasLocation => latitude != null && longitude != null;
 
   factory Workshop.fromJson(Map<String, dynamic> json) => Workshop(
@@ -136,5 +155,10 @@ class Workshop {
     onlineProviders: ((json['onlineProviders'] as List?) ?? const [])
         .map((e) => e as String)
         .toList(),
+    bankName: json['bankName'] as String? ?? '',
+    bankAccountName: json['bankAccountName'] as String? ?? '',
+    bankAccountNumber: json['bankAccountNumber'] as String? ?? '',
+    bankBranch: json['bankBranch'] as String? ?? '',
+    canBankTransfer: json['canBankTransfer'] as bool? ?? false,
   );
 }

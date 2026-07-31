@@ -139,6 +139,17 @@ class ApiClient {
         ),
       );
 
+  /// A POST whose `message` is the point.
+  ///
+  /// Most calls only want the payload, and the screen writes its own wording.
+  /// A few — joining a garage, choosing a handover — have a server that knows
+  /// something the client does not: whether this was a first join or a repeat,
+  /// whether delivery came out free on this bill. Those sentences are written
+  /// to be read by a person, and paraphrasing them here would lose the part
+  /// only the server could know.
+  Future<ApiEnvelope<T>> postEnvelope<T>(String path, {Object? body}) =>
+      _sendEnvelope<T>(() => _dio.post(path, data: body));
+
   Future<T> put<T>(String path, {Object? body}) =>
       _send<T>(() => _dio.put(path, data: body));
 
@@ -164,7 +175,13 @@ class ApiClient {
 
   /// Runs a request, unwraps the envelope, and turns every failure into an
   /// [ApiException].
-  Future<T> _send<T>(Future<Response> Function() request) async {
+  Future<T> _send<T>(Future<Response> Function() request) async =>
+      (await _sendEnvelope<T>(request)).data;
+
+  /// The same, keeping the server's message alongside the payload.
+  Future<ApiEnvelope<T>> _sendEnvelope<T>(
+    Future<Response> Function() request,
+  ) async {
     try {
       final response = await request();
       final body = response.data;
@@ -196,7 +213,10 @@ class ApiClient {
         );
       }
 
-      return (body is Map ? body['data'] : body) as T;
+      return ApiEnvelope<T>(
+        data: (body is Map ? body['data'] : body) as T,
+        message: body is Map ? body['message'] as String? ?? '' : '',
+      );
     } on DioException catch (error) {
       throw ApiException.from(error);
     }
@@ -209,4 +229,12 @@ class ApiClient {
         for (final entry in query.entries)
           if (entry.value != null) entry.key: entry.value,
       };
+}
+
+/// A payload with the sentence the server sent alongside it.
+class ApiEnvelope<T> {
+  const ApiEnvelope({required this.data, required this.message});
+
+  final T data;
+  final String message;
 }

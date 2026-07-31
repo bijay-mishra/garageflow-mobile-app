@@ -39,6 +39,49 @@ class AuthService {
   Future<void> logout(String refreshToken) =>
       _api.post<dynamic>('/auth/logout', body: {'refreshToken': refreshToken});
 
+  /// Updates name, email and phone. Returns the account as it now stands.
+  Future<AuthUser> updateProfile({
+    required String name,
+    required String email,
+    String? phone,
+  }) async {
+    final data = await _api.put<Map<String, dynamic>>(
+      '/auth/profile',
+      body: {'name': name.trim(), 'email': email.trim(), 'phone': phone?.trim()},
+    );
+
+    return AuthUser.fromJson(data);
+  }
+
+  /// Changes the password.
+  ///
+  /// The server revokes every refresh token, so this always ends the session —
+  /// on this phone too. The caller signs the user out rather than pretending
+  /// they are still signed in with a token that will fail on next refresh.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => _api.put<dynamic>(
+    '/auth/change-password',
+    body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+  );
+
+  /// Uploads a profile photo.
+  Future<AuthUser> uploadPhoto(String filePath) async {
+    final data = await _api.upload<Map<String, dynamic>>(
+      '/auth/photo',
+      filePath: filePath,
+      fieldName: 'file',
+    );
+
+    return AuthUser.fromJson(data);
+  }
+
+  Future<AuthUser> removePhoto() async {
+    final data = await _api.delete<Map<String, dynamic>>('/auth/photo');
+    return AuthUser.fromJson(data);
+  }
+
   Future<void> forgotPassword({
     required String companyCode,
     required String email,

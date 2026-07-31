@@ -7,6 +7,23 @@
          would hide the app on the Play Store for those devices. -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
+    <!-- Location, for two things: sorting the garage directory by how near each
+         workshop is, and reporting a driver's position while a delivery is on
+         the way.
+
+         FINE and COARSE only. Deliberately no ACCESS_BACKGROUND_LOCATION:
+         tracking runs while the driver has the screen open and stops when they
+         leave it. A delivery run does not justify following someone's phone
+         while the app is closed, and asking for that permission would be asking
+         for far more than the feature needs.
+
+         GPS is declared optional at the feature level. A customer who never
+         shares a position still gets the whole app, only with an alphabetical
+         directory instead of a nearest-first one. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+
     <!-- networkSecurityConfig: the API runs over plain HTTP in development
          (localhost:5100), and Android has blocked cleartext since API 28.
          Without it every request fails with a bare connection error that reads

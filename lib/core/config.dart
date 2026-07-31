@@ -63,6 +63,23 @@ class AppConfig {
     defaultValue: 'DEMO',
   );
 
+  /// The Google **Web** OAuth client ID, for "Sign in with Google".
+  ///
+  /// Empty by default, which hides the button. Compile it in with:
+  ///
+  /// 
+  ///
+  /// The Web client, not the Android one — this is the audience the ID
+  /// token is minted for, and what the API checks it against. The Android
+  /// client is matched by the SHA-1 you registered and never appears here.
+  ///
+  /// The same id must also be in the API's GoogleAuth:ClientIds, or every
+  /// token will be rejected for the right reason.
+  static const String googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: '',
+  );
+
   /// How often the notification badge re-checks while the app is open.
   ///
   /// This is a polling feed, not push — nothing arrives while the app is

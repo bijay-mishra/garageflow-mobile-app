@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../services/customer_service.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import 'customer_job_detail_screen.dart';
 
@@ -53,27 +55,28 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final spent = _jobs.fold<double>(0, (sum, job) => sum + job.total);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Service history')),
+      appBar: GradientAppBar(title: t('history.title')),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
-            ? const LoadingView(label: 'Loading your history…')
+            ? LoadingView(label: t('history.loading'))
             : _error != null && _jobs.isEmpty
             ? ErrorView(message: _error!, onRetry: _load)
             : _jobs.isEmpty
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
+                children: [
                   SizedBox(height: 80),
                   EmptyView(
                     icon: Icons.history_rounded,
-                    title: 'No completed services yet',
+                    title: t('history.emptyTitle'),
                     message:
-                        'Once the workshop finishes a job, it appears here as '
-                        'a permanent record.',
+                        t('history.emptyMessage'),
                   ),
                 ],
               )
@@ -109,7 +112,9 @@ class _SummaryStrip extends StatelessWidget {
   final double spent;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+
+    return Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: AppTheme.brand,
@@ -174,6 +179,7 @@ class _SummaryStrip extends StatelessWidget {
       ],
     ),
   );
+  }
 }
 
 class _TimelineEntry extends StatelessWidget {
@@ -190,7 +196,10 @@ class _TimelineEntry extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => IntrinsicHeight(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return IntrinsicHeight(
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -204,7 +213,7 @@ class _TimelineEntry extends StatelessWidget {
               Container(
                 width: 2,
                 height: 6,
-                color: isFirst ? Colors.transparent : AppTheme.ink200,
+                color: isFirst ? Colors.transparent : palette.border,
               ),
               Container(
                 width: 11,
@@ -218,7 +227,7 @@ class _TimelineEntry extends StatelessWidget {
               Expanded(
                 child: Container(
                   width: 2,
-                  color: isLast ? Colors.transparent : AppTheme.ink200,
+                  color: isLast ? Colors.transparent : palette.border,
                 ),
               ),
             ],
@@ -237,7 +246,7 @@ class _TimelineEntry extends StatelessWidget {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppTheme.radius),
-                    border: Border.all(color: AppTheme.ink200),
+                    border: Border.all(color: palette.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,19 +256,19 @@ class _TimelineEntry extends StatelessWidget {
                           Expanded(
                             child: Text(
                               Fmt.date(job.completedAt),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.ink900,
+                                color: palette.text,
                               ),
                             ),
                           ),
                           Text(
                             Fmt.rs(job.total),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
-                              color: AppTheme.ink900,
+                              color: palette.text,
                             ),
                           ),
                         ],
@@ -267,9 +276,9 @@ class _TimelineEntry extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         '${job.vehicleLabel} · ${job.vehiclePlate}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
-                          color: AppTheme.ink500,
+                          color: palette.faint,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -277,9 +286,9 @@ class _TimelineEntry extends StatelessWidget {
                         job.complaint.split('\n').first,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.ink700,
+                          color: palette.muted,
                           height: 1.35,
                         ),
                       ),
@@ -288,34 +297,34 @@ class _TimelineEntry extends StatelessWidget {
                         Row(
                           children: [
                             if (job.lines.isNotEmpty) ...[
-                              const Icon(
+                              Icon(
                                 Icons.build_outlined,
                                 size: 12,
-                                color: AppTheme.ink400,
+                                color: palette.faint,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${job.lines.length} item'
                                 '${job.lines.length == 1 ? '' : 's'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11.5,
-                                  color: AppTheme.ink400,
+                                  color: palette.faint,
                                 ),
                               ),
                               const SizedBox(width: 12),
                             ],
                             if (job.photos.isNotEmpty) ...[
-                              const Icon(
+                              Icon(
                                 Icons.photo_library_outlined,
                                 size: 12,
-                                color: AppTheme.ink400,
+                                color: palette.faint,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${job.photos.length}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11.5,
-                                  color: AppTheme.ink400,
+                                  color: palette.faint,
                                 ),
                               ),
                             ],
@@ -332,4 +341,5 @@ class _TimelineEntry extends StatelessWidget {
       ],
     ),
   );
+  }
 }

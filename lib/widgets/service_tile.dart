@@ -12,6 +12,8 @@ Color serviceCategoryColor(String category) => switch (category) {
   'Repair' => AppTheme.amber,
   'Inspection' => AppTheme.emerald,
   'Convenience' => AppTheme.emerald,
+  // No context here, so the fallback is fixed. Only reached for a category
+  // outside the known set, which the dashboard does not offer.
   _ => AppTheme.ink500,
 };
 
@@ -49,13 +51,16 @@ class ServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
     final tone = serviceCategoryColor(service.category);
     final on = selected || alreadyOn;
 
     return Opacity(
       opacity: alreadyOn ? 0.6 : 1,
       child: Material(
-        color: on && !alreadyOn ? AppTheme.brandLight : Colors.white,
+        color: on && !alreadyOn
+            ? AppTheme.brand.withValues(alpha: 0.10)
+            : palette.card,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         child: InkWell(
           onTap: alreadyOn ? null : onTap,
@@ -65,7 +70,7 @@ class ServiceTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               border: Border.all(
-                color: on && !alreadyOn ? AppTheme.brand : AppTheme.ink200,
+                color: on && !alreadyOn ? AppTheme.brand : palette.border,
                 width: on && !alreadyOn ? 1.6 : 1,
               ),
             ),
@@ -94,10 +99,10 @@ class ServiceTile extends StatelessWidget {
                         service.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.ink900,
+                          color: palette.text,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -107,9 +112,9 @@ class ServiceTile extends StatelessWidget {
                             : _subtitle(service),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.ink500,
+                          color: palette.faint,
                         ),
                       ),
                     ],
@@ -124,10 +129,10 @@ class ServiceTile extends StatelessWidget {
                       // A free extra reads as "Free", not "Rs 0" — the latter
                       // looks like a price nobody got round to filling in.
                       service.price == 0 ? 'Free' : Fmt.rs(service.price),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.ink900,
+                        color: palette.text,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -136,7 +141,7 @@ class ServiceTile extends StatelessWidget {
                           ? Icons.check_circle_rounded
                           : Icons.add_circle_outline_rounded,
                       size: 19,
-                      color: on ? AppTheme.brand : AppTheme.ink200,
+                      color: on ? AppTheme.brand : palette.border,
                     ),
                   ],
                 ),

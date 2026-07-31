@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_exception.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/invoice.dart';
 import '../../services/billing_service.dart';
@@ -50,6 +51,8 @@ class _WorkshopCardState extends State<WorkshopCard> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
     final workshop = _workshop;
 
     if (_loading) {
@@ -72,7 +75,7 @@ class _WorkshopCardState extends State<WorkshopCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.ink200),
+        border: Border.all(color: palette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,18 +102,18 @@ class _WorkshopCardState extends State<WorkshopCard> {
                   children: [
                     Text(
                       workshop.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.ink900,
+                        color: palette.text,
                       ),
                     ),
                     if (workshop.address.isNotEmpty)
                       Text(
                         workshop.address,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
-                          color: AppTheme.ink500,
+                          color: palette.faint,
                         ),
                       ),
                   ],
@@ -121,7 +124,7 @@ class _WorkshopCardState extends State<WorkshopCard> {
                   onPressed: () => _call(workshop.phone),
                   icon: const Icon(Icons.phone_rounded, size: 20),
                   color: AppTheme.brand,
-                  tooltip: 'Call the workshop',
+                  tooltip: AppText.of(context)('handover.callWorkshop'),
                 ),
             ],
           ),
@@ -130,18 +133,18 @@ class _WorkshopCardState extends State<WorkshopCard> {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.schedule_rounded,
                   size: 15,
-                  color: AppTheme.ink400,
+                  color: palette.faint,
                 ),
                 const SizedBox(width: 7),
                 Expanded(
                   child: Text(
                     workshop.openingHours,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.ink500,
+                      color: palette.faint,
                     ),
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../models/service.dart';
@@ -99,6 +100,10 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     // Split so the ones that suit this vehicle come first. Nothing is hidden —
     // the mechanic is standing in front of the car and knows better than the
     // list does.
@@ -119,7 +124,7 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
               width: 38,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.ink200,
+                color: palette.border,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -132,13 +137,13 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Add a service',
+                  t('extras.addService'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 3),
                 Text(
                   '${widget.job.vehiclePlate} · ${widget.job.id}',
-                  style: const TextStyle(fontSize: 13, color: AppTheme.ink500),
+                  style: TextStyle(fontSize: 13, color: palette.faint),
                 ),
               ],
             ),
@@ -157,19 +162,19 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
                     child: Text(
                       _loadError!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.ink500,
+                        color: palette.faint,
                       ),
                     ),
                   )
                 : _services.isEmpty
-                ? const Padding(
+                ? Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
                     child: Text(
-                      'The workshop has not set up a price list yet.',
+                      t('extras.noPriceList'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: AppTheme.ink400),
+                      style: TextStyle(fontSize: 13, color: palette.faint),
                     ),
                   )
                 : ListView(
@@ -180,12 +185,13 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
                       if (others.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         Text(
-                          'NOT USUALLY FOR A '
-                          '${(widget.vehicleType ?? 'VEHICLE').toUpperCase()}',
-                          style: const TextStyle(
+                          t('extras.notUsuallyFor', [
+                            (widget.vehicleType ?? '—').toUpperCase(),
+                          ]),
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.ink400,
+                            color: palette.faint,
                             letterSpacing: 0.6,
                           ),
                         ),
@@ -198,8 +204,8 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
 
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppTheme.ink100)),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: palette.border)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -209,18 +215,18 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
                     children: [
                       Text(
                         '${_chosen.length} selected',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.ink500,
+                          color: palette.faint,
                         ),
                       ),
                       const Spacer(),
                       Text(
                         Fmt.rs(_total),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.ink900,
+                          color: palette.text,
                         ),
                       ),
                     ],
@@ -240,15 +246,15 @@ class _AddServiceSheetState extends State<AddServiceSheet> {
                         )
                       : Text(
                           _chosen.isEmpty
-                              ? 'Choose a service'
-                              : 'Add to job card',
+                              ? t('extras.chooseService')
+                              : t('extras.addToJob'),
                         ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Priced from the workshop price list. The customer is notified.',
+                Text(
+                  t('extras.pricedFrom'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11.5, color: AppTheme.ink400),
+                  style: TextStyle(fontSize: 11.5, color: palette.faint),
                 ),
               ],
             ),

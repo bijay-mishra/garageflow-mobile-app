@@ -51,4 +51,21 @@ class BillingService {
   /// not settled, which is the message worth showing.
   Future<void> verifyPayment(String reference) =>
       _api.post<dynamic>('/payments/verify', body: {'reference': reference});
+  /// Tells the workshop the customer has transferred the money.
+  ///
+  /// Records a claim, not a payment: it lands as Pending and the bill is
+  /// unchanged until staff confirm it against the statement. The message
+  /// comes back from the server so the app can say exactly that.
+  Future<String> declareBankTransfer(String invoiceId, {String? reference}) async {
+    final response = await _api.postEnvelope<Map<String, dynamic>>(
+      '/payments/bank-transfer',
+      body: {
+        'invoiceId': invoiceId,
+        if (reference != null && reference.trim().isNotEmpty)
+          'reference': reference.trim(),
+      },
+    );
+
+    return response.message;
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../models/photo.dart';
 
 /// Full-screen photo viewer: swipe between shots, pinch to zoom.
@@ -33,6 +34,8 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final photo = widget.photos[_index];
 
     return Scaffold(
@@ -60,7 +63,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                   child: Image.network(
                     widget.photos[index].url,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Center(
+                    errorBuilder: (_, _, _) => Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -71,7 +74,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                           ),
                           SizedBox(height: 12),
                           Text(
-                            'Could not load this photo',
+                            t('photo.couldNotLoad'),
                             style: TextStyle(color: Colors.white54),
                           ),
                         ],

@@ -44,6 +44,31 @@ dependencies:
   # Hands a location off to whatever map app the phone has, for turn-by-turn.
   url_launcher: ^6.3.1
 
+  # The phone's own position. Two callers: the garage directory sorts by how
+  # near each workshop is, and a driver's phone reports where it is while a
+  # delivery is out.
+  #
+  # Foreground only — see the permission comments in AndroidManifest.xml. This
+  # package is capable of background tracking; the app never asks for it.
+  geolocator: ^13.0.2
+
+  # Where the profile settings live: theme, language, text size, whether the
+  # app asks for a fingerprint. Plain preferences, not secrets — the tokens stay
+  # in flutter_secure_storage above, and nothing here is worth encrypting.
+  shared_preferences: ^2.5.5
+
+  # Fingerprint / face unlock for the app lock. Only ever used to gate this
+  # app's own screens: it authenticates against the phone's enrolled biometrics
+  # and never sees or replaces the GarageFlow password.
+  local_auth: ^3.0.2
+
+  # Bikram Sambat dates. A Nepali workshop keeps its books in BS, so when the
+  # app is set to Nepali every date is shown in BS — the same pairing the
+  # dashboard makes with nepali-date-converter, and the two agree because both
+  # are real conversion tables rather than the "add 56 years" approximation.
+  nepali_utils: ^3.0.8
+  google_sign_in: ^7.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

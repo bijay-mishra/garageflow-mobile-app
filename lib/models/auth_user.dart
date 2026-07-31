@@ -8,6 +8,7 @@ class AuthUser {
     required this.workshop,
     required this.companyCode,
     this.phone,
+    this.photoUrl,
     this.mechanicName,
     this.customerId,
   });
@@ -22,6 +23,15 @@ class AuthUser {
   final String workshop;
   final String companyCode;
   final String? phone;
+
+  /// Their profile photo, or null when they have not set one.
+  ///
+  /// Null is the normal case and there is no placeholder image: the app draws
+  /// [initials] instead, which says who it is rather than showing a grey
+  /// silhouette that says nothing.
+  final String? photoUrl;
+
+  bool get hasPhoto => photoUrl != null && photoUrl!.isNotEmpty;
 
   /// Set for a Mechanic — the name they are assigned under on job cards.
   final String? mechanicName;
@@ -63,6 +73,7 @@ class AuthUser {
     workshop: json['workshop'] as String? ?? '',
     companyCode: json['companyCode'] as String? ?? '',
     phone: json['phone'] as String?,
+    photoUrl: json['photoUrl'] as String?,
     mechanicName: json['mechanicName'] as String?,
     customerId: json['customerId'] as String?,
   );
@@ -75,6 +86,7 @@ class AuthUser {
     'workshop': workshop,
     'companyCode': companyCode,
     'phone': phone,
+    'photoUrl': photoUrl,
     'mechanicName': mechanicName,
     'customerId': customerId,
   };

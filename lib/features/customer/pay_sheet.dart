@@ -4,9 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/invoice.dart';
 import '../../services/billing_service.dart';
+import '../../widgets/states.dart';
+import 'bank_transfer_card.dart';
 
 /// Pays a bill through eSewa or Khalti.
 ///
@@ -23,9 +26,18 @@ import '../../services/billing_service.dart';
 /// iOS, and a scheme that has to survive both — for the same result as noticing
 /// that the app was resumed and asking a question it can ask anyway.
 class PaySheet extends StatefulWidget {
-  const PaySheet({super.key, required this.invoice, required this.providers});
+  const PaySheet({
+    super.key,
+    required this.invoice,
+    required this.providers,
+    this.workshop,
+  });
 
   final Invoice invoice;
+
+  /// The workshop record, for its bank details. Null while the query is still
+  /// in flight, in which case bank transfer is simply not offered yet.
+  final Workshop? workshop;
 
   /// Wallets the server can actually take money through, from the workshop
   /// record. Never hardcoded — a button that dead-ends is worse than no button.
@@ -65,6 +77,9 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
   }
 
   Future<void> _pay(String provider) async {
+
+    final t = AppText.of(context);
+
     setState(() {
       _busy = true;
       _error = null;
@@ -86,7 +101,7 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
       if (!opened) {
         setState(() {
           _busy = false;
-          _error = 'Could not open $provider. Is a browser installed?';
+          _error = t('pay.couldNotOpen', [provider]);
         });
         return;
       }
@@ -129,6 +144,10 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     final waiting = _reference != null;
 
     return SafeArea(
@@ -143,18 +162,18 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.ink200,
+                  color: palette.border,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
             ),
             const SizedBox(height: 18),
 
-            Text('Pay this bill', style: Theme.of(context).textTheme.titleLarge),
+            Text(t('pay.title'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 3),
             Text(
               '${widget.invoice.id} · ${widget.invoice.vehiclePlate}',
-              style: const TextStyle(fontSize: 13, color: AppTheme.ink500),
+              style: TextStyle(fontSize: 13, color: palette.faint),
             ),
 
             const SizedBox(height: 16),
@@ -166,8 +185,8 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
               ),
               child: Row(
                 children: [
-                  const Text(
-                    'Amount due',
+                  Text(
+                    t('pay.amountDue'),
                     style: TextStyle(fontSize: 13.5, color: AppTheme.brandDark),
                   ),
                   const Spacer(),
@@ -197,11 +216,10 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                      'Waiting for $_provider to confirm. Finish paying, then come '
-                      'back — this updates on its own.',
-                      style: const TextStyle(
+                      t('pay.waiting', [_provider]),
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.ink700,
+                        color: palette.muted,
                         height: 1.4,
                       ),
                     ),
@@ -220,7 +238,7 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
                           valueColor: AlwaysStoppedAnimation(Colors.white),
                         ),
                       )
-                    : const Text('Check again'),
+                    : Text(t('pay.checkAgain')),
               ),
               const SizedBox(height: 8),
               OutlinedButton(
@@ -231,20 +249,19 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
                         _provider = null;
                         _error = null;
                       }),
-                child: const Text('Pay a different way'),
+                child: Text(t('pay.differentWay')),
               ),
             ] else if (widget.providers.isEmpty) ...[
-              const Text(
-                'This workshop does not take online payment yet. Pay at the '
-                'counter by cash, card or bank transfer.',
+              Text(
+                t('pay.notAvailable'),
                 style: TextStyle(
                   fontSize: 13.5,
-                  color: AppTheme.ink500,
+                  color: palette.faint,
                   height: 1.45,
                 ),
               ),
             ] else ...[
-              const _Label('PAY WITH'),
+              _Label(t('pay.payWith')),
               const SizedBox(height: 10),
               for (final provider in widget.providers)
                 Padding(
@@ -256,15 +273,32 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
                   ),
                 ),
               const SizedBox(height: 4),
-              const Text(
-                'You will be taken to the app or website to authorise. Nothing is '
-                'charged until you confirm there.',
+              Text(
+                t('pay.authorise'),
                 style: TextStyle(
                   fontSize: 11.5,
-                  color: AppTheme.ink400,
+                  color: palette.faint,
                   height: 1.4,
                 ),
               ),
+
+              // Bank transfer sits with the wallets but is labelled honestly:
+              // no gateway is involved, so the bill does not move until a
+              // person has checked the statement.
+              if (widget.workshop?.canBankTransfer == true) ...[
+                const SizedBox(height: 12),
+                BankTransferCard(
+                  workshop: widget.workshop!,
+                  invoice: widget.invoice,
+                  busy: _busy,
+                  onDeclared: (message) {
+                    // Closed with `false`: nothing has been paid yet, so the
+                    // bills list must not celebrate a payment.
+                    Navigator.of(context).pop(false);
+                    showSnack(context, message);
+                  },
+                ),
+              ],
             ],
 
             if (_error != null) ...[
@@ -328,13 +362,10 @@ class _ProviderButton extends StatelessWidget {
     'Khalti': Color(0xFF5C2D91),
   };
 
-  static const _taglines = <String, String>{
-    'eSewa': 'Wallet, bank or card',
-    'Khalti': 'Wallet, bank or card',
-  };
-
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final color = _colors[provider] ?? AppTheme.brand;
 
     return Opacity(
@@ -386,10 +417,10 @@ class _ProviderButton extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _taglines[provider] ?? 'Pay online',
-                      style: const TextStyle(
+                      t('pay.walletBankCard'),
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.ink500,
+                        color: AppTheme.of(context).faint,
                       ),
                     ),
                   ],
@@ -411,13 +442,17 @@ class _Label extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Text(
     text,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 11.5,
       fontWeight: FontWeight.w700,
-      color: AppTheme.ink400,
+      color: palette.faint,
       letterSpacing: 0.7,
     ),
   );
+  }
 }

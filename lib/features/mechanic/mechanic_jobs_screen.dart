@@ -3,13 +3,16 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../services/mechanic_service.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/status_chip.dart';
+import 'deliveries_screen.dart';
 import 'mechanic_job_detail_screen.dart';
 
 /// The mechanic's home: what they have been given, in the order it matters.
@@ -73,102 +76,155 @@ class _MechanicJobsScreenState extends State<MechanicJobsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final user = context.watch<AuthController>().user;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _load,
+        // Pulled down over the gradient, so it needs to be visible on blue.
+        color: AppTheme.brand,
+        child: ListView(
+          // Always scrollable, so pull-to-refresh works even when the list is
+          // empty — which is exactly when someone wants to pull.
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
           children: [
-            Text('Hi, ${user?.firstName ?? 'there'}'),
-            Text(
-              user?.workshop ?? '',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.ink400,
+            GradientHeader(
+              title: t('jobs.greeting', [user?.firstName ?? '—']),
+              subtitle: user?.workshop,
+              leading: HeaderAvatar(initials: user?.initials ?? '?'),
+              actions: [
+                HeaderAction(
+                  icon: Icons.local_shipping_outlined,
+                  tooltip: t('driver.handovers'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MechanicDeliveriesScreen(),
+                    ),
+                  ),
+                ),
+                HeaderAction(
+                  icon: Icons.refresh_rounded,
+                  tooltip: t('common.refresh'),
+                  onPressed: _loading ? null : _load,
+                ),
+              ],
+              floating: StatStrip(
+                stats: [
+                  Stat(
+                    label: t('jobs.assigned'),
+                    value: '${_summary.assignedTotal}',
+                    icon: Icons.assignment_outlined,
+                    color: AppTheme.brand,
+                    selected: _statusFilter == null,
+                    onTap: () => _filter(null),
+                  ),
+                  Stat(
+                    label: t('jobs.inProgress'),
+                    value: '${_summary.inProgress}',
+                    icon: Icons.handyman_outlined,
+                    color: AppTheme.cyan,
+                    selected: _statusFilter == 'In Progress',
+                    onTap: () => _filter('In Progress'),
+                  ),
+                  Stat(
+                    label: t('jobs.awaitingParts'),
+                    value: '${_summary.awaitingParts}',
+                    icon: Icons.inventory_2_outlined,
+                    color: AppTheme.amber,
+                    selected: _statusFilter == 'Awaiting Parts',
+                    onTap: () => _filter('Awaiting Parts'),
+                  ),
+                ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+              child: _buildBody(),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: _buildBody(),
       ),
     );
   }
 
   Widget _buildBody() {
+    final t = AppText.of(context);
+
     if (_loading && _jobs.isEmpty) {
-      return const LoadingView(label: 'Loading your jobs…');
+      return Padding(
+        padding: EdgeInsets.only(top: 60),
+        child: LoadingView(label: t('jobs.loading')),
+      );
     }
 
     if (_error != null && _jobs.isEmpty) {
-      return ErrorView(message: _error!, onRetry: _load);
+      return Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: ErrorView(message: _error!, onRetry: _load),
+      );
     }
 
-    return ListView(
-      // Always scrollable, so pull-to-refresh works even when the list is
-      // empty — which is exactly when someone wants to pull.
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SummaryGrid(summary: _summary, onTapStatus: _filter),
-        const SizedBox(height: 18),
+        // The day's headline, before any list. An overdue job is the one thing
+        // on this screen that should be read before anything is scanned.
+        if (_summary.overdue > 0) ...[
+          _Banner(
+            icon: Icons.warning_amber_rounded,
+            color: AppTheme.rose,
+            text: _summary.overdue == 1
+                ? t('jobs.overdueOne')
+                : t('jobs.overdueMany', [_summary.overdue]),
+          ),
+          const SizedBox(height: 16),
+        ] else if (_summary.completedToday > 0) ...[
+          _Banner(
+            icon: Icons.task_alt_rounded,
+            color: AppTheme.emerald,
+            text: _summary.completedToday == 1
+                ? t('jobs.doneOne')
+                : t('jobs.doneMany', [_summary.completedToday]),
+          ),
+          const SizedBox(height: 16),
+        ],
 
-        Row(
-          children: [
-            Text(
-              _statusFilter ?? 'Active jobs',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.ink400,
-                letterSpacing: 0.6,
-              ),
-            ),
-            const Spacer(),
-            if (_statusFilter != null)
-              TextButton.icon(
-                onPressed: () => _filter(_statusFilter),
-                icon: const Icon(Icons.close_rounded, size: 15),
-                label: const Text('Clear filter'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-          ],
+        SectionLabel(
+          _statusFilter ?? t('jobs.active'),
+          trailing: _statusFilter != null
+              ? TextButton.icon(
+                  onPressed: () => _filter(_statusFilter),
+                  icon: const Icon(Icons.close_rounded, size: 15),
+                  label: Text(t('jobs.clearFilter')),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+              : null,
         ),
-        const SizedBox(height: 10),
 
         if (_jobs.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 40),
+            padding: const EdgeInsets.only(top: 30),
             child: EmptyView(
               icon: Icons.check_circle_outline_rounded,
               title: _statusFilter == null
-                  ? 'Nothing on your ramp'
-                  : 'No $_statusFilter jobs',
+                  ? t('jobs.emptyTitle')
+                  : t('jobs.noneOfStatus', [_statusFilter]),
               message: _statusFilter == null
-                  ? 'Jobs assigned to you will appear here.'
-                  : 'Try clearing the filter.',
+                  ? t('jobs.emptyMessage')
+                  : t('jobs.tryClearing'),
             ),
           )
         else
           ..._jobs.map(
             (job) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: _JobCard(
                 job: job,
                 onTap: () async {
@@ -189,67 +245,43 @@ class _MechanicJobsScreenState extends State<MechanicJobsScreen> {
   }
 }
 
-class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.summary, required this.onTapStatus});
+/// One line of context above the list, in the colour of what it is saying.
+class _Banner extends StatelessWidget {
+  const _Banner({required this.icon, required this.color, required this.text});
 
-  final MechanicSummary summary;
-  final void Function(String? status) onTapStatus;
+  final IconData icon;
+  final Color color;
+  final String text;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: StatTile(
-              label: 'Assigned',
-              value: summary.assignedTotal,
-              icon: Icons.assignment_outlined,
-              color: AppTheme.brand,
-              onTap: () => onTapStatus(null),
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    decoration: BoxDecoration(
+      gradient: AppTheme.tintGradient(color),
+      borderRadius: BorderRadius.circular(AppTheme.radius),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 19, color: color),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+              height: 1.3,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: StatTile(
-              label: 'In progress',
-              value: summary.inProgress,
-              icon: Icons.handyman_outlined,
-              color: AppTheme.cyan,
-              onTap: () => onTapStatus('In Progress'),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: StatTile(
-              label: 'Awaiting parts',
-              value: summary.awaitingParts,
-              icon: Icons.inventory_2_outlined,
-              color: AppTheme.amber,
-              onTap: () => onTapStatus('Awaiting Parts'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: StatTile(
-              label: summary.overdue > 0 ? 'Overdue' : 'Done today',
-              value: summary.overdue > 0
-                  ? summary.overdue
-                  : summary.completedToday,
-              icon: summary.overdue > 0
-                  ? Icons.warning_amber_rounded
-                  : Icons.task_alt_rounded,
-              color: summary.overdue > 0 ? AppTheme.rose : AppTheme.emerald,
-            ),
-          ),
-        ],
-      ),
-    ],
+        ),
+      ],
+    ),
   );
+  }
 }
 
 /// One job in the list. Plate first and largest — it is how a mechanic
@@ -261,116 +293,102 @@ class _JobCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(AppTheme.radius),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.radius),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(
-            // An overdue job wears its border red. It is the one thing on this
-            // screen that should catch the eye before anything is read.
-            color: job.isOverdue
-                ? AppTheme.rose.withValues(alpha: 0.45)
-                : AppTheme.ink200,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    job.vehiclePlate,
-                    style: const TextStyle(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.ink900,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ),
-                StatusChip(job.status, dense: true),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              '${job.vehicleLabel} · ${job.customerName}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, color: AppTheme.ink500),
-            ),
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
 
-            if (job.complaint.isNotEmpty) ...[
-              const SizedBox(height: 9),
-              Text(
-                // Only the first line: a complaint accumulates work notes, and
-                // the list is for scanning, not reading.
-                job.complaint.split('\n').first,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.ink700,
-                  height: 1.35,
+    return AppCard(
+    onTap: onTap,
+    padding: const EdgeInsets.all(15),
+    // The status is carried by the left edge instead of a coloured border
+    // around the whole card, so a list of six jobs is readable at a glance
+    // rather than being six competing outlines.
+    accent: job.isOverdue ? AppTheme.rose : AppTheme.statusColor(job.status),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                job.vehiclePlate,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: palette.text,
+                  letterSpacing: -0.3,
                 ),
               ),
-            ],
-
-            const SizedBox(height: 11),
-            Row(
-              children: [
-                Icon(
-                  job.isOverdue
-                      ? Icons.warning_amber_rounded
-                      : Icons.schedule_rounded,
-                  size: 13,
-                  color: job.isOverdue ? AppTheme.rose : AppTheme.ink400,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  Fmt.due(job.promisedAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: job.isOverdue
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: job.isOverdue ? AppTheme.rose : AppTheme.ink500,
-                  ),
-                ),
-                const Spacer(),
-                if (job.photoCount > 0) ...[
-                  const Icon(
-                    Icons.photo_library_outlined,
-                    size: 13,
-                    color: AppTheme.ink400,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    '${job.photoCount}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.ink400,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                if (job.isUrgent)
-                  MetaChip(
-                    job.priority,
-                    color: AppTheme.priorityColor(job.priority),
-                    icon: Icons.priority_high_rounded,
-                  ),
-              ],
             ),
+            StatusChip(job.status, dense: true),
           ],
         ),
-      ),
+        const SizedBox(height: 3),
+        Text(
+          '${job.vehicleLabel} · ${job.customerName}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 12.5, color: palette.faint),
+        ),
+
+        if (job.complaint.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            // Only the first line: a complaint accumulates work notes, and
+            // the list is for scanning, not reading.
+            job.complaint.split('\n').first,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: palette.muted,
+              height: 1.35,
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(
+              job.isOverdue
+                  ? Icons.warning_amber_rounded
+                  : Icons.schedule_rounded,
+              size: 13,
+              color: job.isOverdue ? AppTheme.rose : palette.faint,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              Fmt.due(job.promisedAt),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: job.isOverdue ? FontWeight.w700 : FontWeight.w500,
+                color: job.isOverdue ? AppTheme.rose : palette.faint,
+              ),
+            ),
+            const Spacer(),
+            if (job.photoCount > 0) ...[
+              Icon(
+                Icons.photo_library_outlined,
+                size: 13,
+                color: palette.faint,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                '${job.photoCount}',
+                style: TextStyle(fontSize: 12, color: palette.faint),
+              ),
+              const SizedBox(width: 10),
+            ],
+            if (job.isUrgent)
+              MetaChip(
+                job.priority,
+                color: AppTheme.priorityColor(job.priority),
+                icon: Icons.priority_high_rounded,
+              ),
+          ],
+        ),
+      ],
     ),
   );
+  }
 }

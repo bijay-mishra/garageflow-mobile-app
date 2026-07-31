@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/notification_controller.dart';
 import '../notifications/notifications_screen.dart';
-import '../shared/account_screen.dart';
+import '../profile/profile_screen.dart';
 import 'mechanic_jobs_screen.dart';
 
 /// The mechanic's app: their jobs, the feed, and their account.
@@ -25,11 +26,15 @@ class _MechanicShellState extends State<MechanicShell> {
   static const _screens = [
     MechanicJobsScreen(),
     NotificationsScreen(),
-    AccountScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     final unread = context.watch<NotificationController>().unreadCount;
 
     return Scaffold(
@@ -38,17 +43,17 @@ class _MechanicShellState extends State<MechanicShell> {
       // does not re-fetch their job list.
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.ink200)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: palette.border)),
         ),
         child: BottomNavigationBar(
           currentIndex: _index,
           onTap: (index) => setState(() => _index = index),
           items: [
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.build_outlined),
               activeIcon: Icon(Icons.build_rounded),
-              label: 'My jobs',
+              label: t('tab.myJobs'),
             ),
             BottomNavigationBarItem(
               icon: NotificationBadge(
@@ -59,12 +64,12 @@ class _MechanicShellState extends State<MechanicShell> {
                 count: unread,
                 child: const Icon(Icons.notifications_rounded),
               ),
-              label: 'Alerts',
+              label: t('tab.alerts'),
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded),
-              label: 'Account',
+              label: t('tab.account'),
             ),
           ],
         ),
@@ -83,6 +88,7 @@ class NotificationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     if (count == 0) return child;
 
     return Stack(

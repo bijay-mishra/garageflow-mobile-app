@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/invoice.dart';
 import '../../services/billing_service.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import 'pay_sheet.dart';
 
@@ -58,6 +60,8 @@ class _BillsScreenState extends State<BillsScreen> {
   }
 
   Future<void> _pay(Invoice invoice) async {
+    final t = AppText.of(context);
+
     final paid = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -68,17 +72,22 @@ class _BillsScreenState extends State<BillsScreen> {
       builder: (_) => PaySheet(
         invoice: invoice,
         providers: _workshop?.onlineProviders ?? const [],
+        workshop: _workshop,
       ),
     );
 
     if (paid == true && mounted) {
       await _load();
-      if (mounted) showSnack(context, 'Payment received. Thank you.');
+      if (mounted) showSnack(context, t('pay.received'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     // Unpaid first, then by date. Within each group the newest is on top.
     final sorted = [..._invoices]..sort((a, b) {
       if (a.isPaid != b.isPaid) return a.isPaid ? 1 : -1;
@@ -88,7 +97,7 @@ class _BillsScreenState extends State<BillsScreen> {
     final due = _invoices.fold(0.0, (sum, i) => sum + i.due);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bills')),
+      appBar: GradientAppBar(title: t('bills.title')),
       body: _loading
           ? const LoadingView()
           : _error != null
@@ -101,12 +110,12 @@ class _BillsScreenState extends State<BillsScreen> {
                 children: [
                   if (due > 0) _DueBanner(amount: due),
                   if (_invoices.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 60),
                       child: Center(
                         child: Text(
-                          'No bills yet.',
-                          style: TextStyle(fontSize: 14, color: AppTheme.ink400),
+                          t('bills.none'),
+                          style: TextStyle(fontSize: 14, color: palette.faint),
                         ),
                       ),
                     ),
@@ -132,7 +141,9 @@ class _DueBanner extends StatelessWidget {
   final double amount;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+
+    return Container(
     margin: const EdgeInsets.only(bottom: 14),
     padding: const EdgeInsets.all(15),
     decoration: BoxDecoration(
@@ -141,7 +152,7 @@ class _DueBanner extends StatelessWidget {
     ),
     child: Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Text(
             'Outstanding',
             style: TextStyle(
@@ -162,6 +173,7 @@ class _DueBanner extends StatelessWidget {
       ],
     ),
   );
+  }
 }
 
 class _InvoiceCard extends StatelessWidget {
@@ -172,6 +184,10 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
     final tone = invoice.isPaid
         ? AppTheme.emerald
         : invoice.paid > 0
@@ -183,7 +199,7 @@ class _InvoiceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: AppTheme.ink200),
+        border: Border.all(color: palette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,18 +212,18 @@ class _InvoiceCard extends StatelessWidget {
                   children: [
                     Text(
                       invoice.id,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.ink900,
+                        color: palette.text,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${invoice.vehiclePlate} · ${Fmt.date(invoice.issuedAt)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
-                        color: AppTheme.ink500,
+                        color: palette.faint,
                       ),
                     ),
                   ],
@@ -258,9 +274,9 @@ class _InvoiceCard extends StatelessWidget {
             FilledButton(
               onPressed: onPay,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
+                minimumSize: Size.fromHeight(46),
               ),
-              child: Text('Pay ${Fmt.rs(invoice.due)}'),
+              child: Text(t('pay.payAmount', [Fmt.rs(invoice.due)])),
             ),
           ] else if (invoice.method != null) ...[
             const SizedBox(height: 10),
@@ -273,10 +289,10 @@ class _InvoiceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 Text(
-                  'Paid by ${invoice.method}',
-                  style: const TextStyle(
+                  t('pay.paidBy', [invoice.method]),
+                  style: TextStyle(
                     fontSize: 12.5,
-                    color: AppTheme.ink500,
+                    color: palette.faint,
                   ),
                 ),
               ],
@@ -292,24 +308,28 @@ class _Figure extends StatelessWidget {
   const _Figure({
     required this.label,
     required this.value,
-    this.color = AppTheme.ink900,
+    this.color,
     this.alignEnd = false,
   });
 
   final String label;
   final String value;
-  final Color color;
+  /// Null takes the palette's default text colour.
+  final Color? color;
   final bool alignEnd;
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Column(
     crossAxisAlignment: alignEnd
         ? CrossAxisAlignment.end
         : CrossAxisAlignment.start,
     children: [
       Text(
         label,
-        style: const TextStyle(fontSize: 11, color: AppTheme.ink400),
+        style: TextStyle(fontSize: 11, color: palette.faint),
       ),
       const SizedBox(height: 2),
       Text(
@@ -317,9 +337,10 @@ class _Figure extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: color,
+          color: color ?? palette.text,
         ),
       ),
     ],
   );
+  }
 }

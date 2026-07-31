@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/service.dart';
 import '../../models/vehicle.dart';
 import '../../services/catalogue_service.dart';
 import '../../services/customer_service.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/service_tile.dart';
 import '../../widgets/states.dart';
 
@@ -45,6 +47,8 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
 
   /// Coarse slots rather than a time picker. A workshop does not run to the
   /// minute, and asking for one implies a precision the shop cannot honour.
+  /// Stored as the values the API expects. Translated at the point of display,
+  /// because a static const list cannot reach the translator.
   static const _slots = ['Morning', 'Afternoon', 'Evening', 'Any time'];
 
   Vehicle get _vehicle =>
@@ -136,14 +140,19 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Book a service')),
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
+    return Scaffold(
+    appBar: GradientAppBar(title: t('booking.title')),
     body: Form(
       key: _formKey,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
         children: [
-          const _Label('WHICH VEHICLE?'),
+          _Label(t('booking.whichVehicle')),
           const SizedBox(height: 10),
           ...widget.vehicles.map(
             (vehicle) => Padding(
@@ -157,26 +166,24 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
           ),
 
           const SizedBox(height: 20),
-          const _Label('WHAT IS WRONG?'),
+          _Label(t('booking.whatIsWrong')),
           const SizedBox(height: 10),
           TextFormField(
             controller: _complaint,
             maxLines: 4,
             maxLength: 1000,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText:
-                  'Describe what you have noticed — a noise, a warning light, '
-                  'or just a routine service.',
+            decoration: InputDecoration(
+              hintText: t('booking.complaintHint'),
               alignLabelWithHint: true,
             ),
             validator: (value) => (value == null || value.trim().isEmpty)
-                ? 'Tell the workshop what to look at'
+                ? t('booking.complaintRequired')
                 : null,
           ),
 
           const SizedBox(height: 10),
-          const _Label('WHEN SUITS YOU?'),
+          _Label(t('booking.whenSuits')),
           const SizedBox(height: 10),
 
           Material(
@@ -190,28 +197,28 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  border: Border.all(color: AppTheme.ink200),
+                  border: Border.all(color: palette.border),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_rounded,
                       size: 19,
-                      color: AppTheme.ink500,
+                      color: palette.faint,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       Fmt.dayAndDate(_date),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.ink900,
+                        color: palette.text,
                       ),
                     ),
                     const Spacer(),
-                    const Icon(
+                    Icon(
                       Icons.expand_more_rounded,
-                      color: AppTheme.ink400,
+                      color: palette.faint,
                     ),
                   ],
                 ),
@@ -226,17 +233,17 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
             children: [
               for (final slot in _slots)
                 ChoiceChip(
-                  label: Text(slot),
+                  label: Text(t('booking.slot.$slot')),
                   selected: _time == slot,
                   onSelected: (_) => setState(() => _time = slot),
                   selectedColor: AppTheme.brand.withValues(alpha: 0.12),
                   labelStyle: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: _time == slot ? AppTheme.brand : AppTheme.ink700,
+                    color: _time == slot ? AppTheme.brand : palette.muted,
                   ),
                   side: BorderSide(
-                    color: _time == slot ? AppTheme.brand : AppTheme.ink200,
+                    color: _time == slot ? AppTheme.brand : palette.border,
                   ),
                 ),
             ],
@@ -246,7 +253,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Expanded(child: _Label('ANYTHING ELSE WHILE IT IS IN?')),
+              Expanded(child: _Label(t('booking.anythingElse'))),
               if (_chosen.isNotEmpty)
                 Text(
                   '${_chosen.length} added',
@@ -260,9 +267,9 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Optional extras for your ${_vehicle.type.toLowerCase()}. '
-            'Prices are held at what you see here.',
-            style: const TextStyle(fontSize: 12.5, color: AppTheme.ink500),
+            '${t('booking.extrasFor', [_vehicle.type.toLowerCase()])} '
+            '${t('booking.pricesHeld')}',
+            style: TextStyle(fontSize: 12.5, color: palette.faint),
           ),
           const SizedBox(height: 10),
 
@@ -282,12 +289,12 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.ink200),
+                border: Border.all(color: palette.border),
               ),
-              child: const Text(
-                'The workshop has not listed any extras yet.',
+              child: Text(
+                t('booking.noExtras'),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: AppTheme.ink400),
+                style: TextStyle(fontSize: 12.5, color: palette.faint),
               ),
             )
           else
@@ -311,7 +318,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
               color: AppTheme.brandLight,
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
@@ -322,8 +329,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'This is a request. The workshop will confirm the date, and '
-                    'you will get a notification either way.',
+                    t('booking.isRequest'),
                     style: TextStyle(
                       fontSize: 12.5,
                       color: AppTheme.brandDark,
@@ -340,9 +346,9 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
     bottomNavigationBar: SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: AppTheme.ink100)),
+          border: Border(top: BorderSide(color: palette.border)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -353,25 +359,25 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
             if (_chosen.isNotEmpty) ...[
               Row(
                 children: [
-                  const Text(
-                    'Extras estimate',
-                    style: TextStyle(fontSize: 13, color: AppTheme.ink500),
+                  Text(
+                    t('home.extrasEstimate'),
+                    style: TextStyle(fontSize: 13, color: palette.faint),
                   ),
                   const Spacer(),
                   Text(
                     Fmt.rs(_estimate),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.ink900,
+                      color: palette.text,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              const Text(
-                'The repair itself is quoted after the workshop has looked at it.',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.ink400),
+              Text(
+                t('booking.repairQuoted'),
+                style: TextStyle(fontSize: 11.5, color: palette.faint),
               ),
               const SizedBox(height: 10),
             ],
@@ -386,13 +392,14 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                         valueColor: AlwaysStoppedAnimation(Colors.white),
                       ),
                     )
-                  : const Text('Request booking'),
+                  : Text(t('booking.submit')),
             ),
           ],
         ),
       ),
     ),
   );
+  }
 }
 
 class _Label extends StatelessWidget {
@@ -401,15 +408,19 @@ class _Label extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Text(
     text,
-    style: const TextStyle(
+    style: TextStyle(
       fontSize: 11.5,
       fontWeight: FontWeight.w700,
-      color: AppTheme.ink400,
+      color: palette.faint,
       letterSpacing: 0.7,
     ),
   );
+  }
 }
 
 class _VehicleOption extends StatelessWidget {
@@ -424,7 +435,10 @@ class _VehicleOption extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Material(
     color: selected ? AppTheme.brandLight : Colors.white,
     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
     child: InkWell(
@@ -435,7 +449,7 @@ class _VehicleOption extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: selected ? AppTheme.brand : AppTheme.ink200,
+            color: selected ? AppTheme.brand : palette.border,
             width: selected ? 1.6 : 1,
           ),
         ),
@@ -450,15 +464,15 @@ class _VehicleOption extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: selected ? AppTheme.brandDark : AppTheme.ink900,
+                      color: selected ? AppTheme.brandDark : palette.text,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     vehicle.plate,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.ink500,
+                      color: palette.faint,
                     ),
                   ),
                 ],
@@ -468,7 +482,7 @@ class _VehicleOption extends StatelessWidget {
               selected
                   ? Icons.radio_button_checked_rounded
                   : Icons.radio_button_unchecked_rounded,
-              color: selected ? AppTheme.brand : AppTheme.ink200,
+              color: selected ? AppTheme.brand : palette.border,
               size: 21,
             ),
           ],
@@ -476,4 +490,5 @@ class _VehicleOption extends StatelessWidget {
       ),
     ),
   );
+  }
 }

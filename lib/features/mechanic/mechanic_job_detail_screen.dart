@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../models/photo.dart';
 import '../../services/mechanic_service.dart';
+import '../../widgets/gradient_header.dart';
 import '../../widgets/location_card.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
@@ -67,6 +69,8 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
   }
 
   Future<void> _updateStatus() async {
+    final t = AppText.of(context);
+
     final job = _job;
     if (job == null) return;
 
@@ -78,11 +82,13 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
 
     if (updated != null && mounted) {
       setState(() => _job = updated);
-      showSnack(context, 'Job marked ${updated.status}.');
+      showSnack(context, t('job.markedStatus', [updated.status]));
     }
   }
 
   Future<void> _addService() async {
+    final t = AppText.of(context);
+
     final job = _job;
     if (job == null) return;
 
@@ -99,11 +105,13 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
 
     if (updated != null && mounted) {
       setState(() => _job = updated);
-      showSnack(context, 'Added to the job card. The customer has been told.');
+      showSnack(context, t('job.serviceAdded'));
     }
   }
 
   Future<void> _addPhoto() async {
+    final t = AppText.of(context);
+
     final added = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -112,25 +120,27 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
 
     if (added == true && mounted) {
       await _load();
-      if (mounted) showSnack(context, 'Photo added.');
+      if (mounted) showSnack(context, t('job.photoAdded'));
     }
   }
 
   Future<void> _deletePhoto(JobPhoto photo) async {
+    final t = AppText.of(context);
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete photo?'),
-        content: const Text('This cannot be undone.'),
+        title: Text(t('job.deletePhoto')),
+        content: Text(t('job.cannotUndo')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.rose),
-            child: const Text('Delete'),
+            child: Text('Delete'),
           ),
         ],
       ),
@@ -145,7 +155,7 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
       );
       if (!mounted) return;
       setState(() => _photos = _photos.where((p) => p.id != photo.id).toList());
-      showSnack(context, 'Photo deleted.');
+      showSnack(context, t('job.photoDeleted'));
     } on ApiException catch (error) {
       if (mounted) showSnack(context, error.message, isError: true);
     }
@@ -153,14 +163,19 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
     final job = _job;
 
     return Scaffold(
-      appBar: AppBar(title: Text(job?.vehiclePlate ?? widget.jobId)),
+      appBar: GradientAppBar(
+        title: job?.vehiclePlate ?? widget.jobId,
+        subtitle: job?.vehicleLabel,
+      ),
       body: _loading
           ? const LoadingView()
           : job == null
-          ? ErrorView(message: _error ?? 'Job not found.', onRetry: _load)
+          ? ErrorView(message: _error ?? t('job.notFound'), onRetry: _load)
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
@@ -204,7 +219,7 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _addPhoto,
                         icon: const Icon(Icons.add_a_photo_outlined, size: 19),
-                        label: const Text('Photo'),
+                        label: Text('Photo'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -214,7 +229,7 @@ class _MechanicJobDetailScreenState extends State<MechanicJobDetailScreen> {
                         onPressed: _updateStatus,
                         icon: const Icon(Icons.published_with_changes_rounded,
                             size: 19),
-                        label: const Text('Update status'),
+                        label: Text(t('job.updateStatus')),
                       ),
                     ),
                   ],
@@ -231,7 +246,10 @@ class _Header extends StatelessWidget {
   final MechanicJob job;
 
   @override
-  Widget build(BuildContext context) => SectionCard(
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return SectionCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,9 +266,9 @@ class _Header extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${job.id} · ${job.customerName}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
-                      color: AppTheme.ink500,
+                      color: palette.faint,
                     ),
                   ),
                 ],
@@ -265,7 +283,7 @@ class _Header extends StatelessWidget {
           decoration: BoxDecoration(
             color: job.isOverdue
                 ? AppTheme.rose.withValues(alpha: 0.08)
-                : AppTheme.ink50,
+                : palette.field,
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           ),
           child: Row(
@@ -275,7 +293,7 @@ class _Header extends StatelessWidget {
                     ? Icons.warning_amber_rounded
                     : Icons.schedule_rounded,
                 size: 17,
-                color: job.isOverdue ? AppTheme.rose : AppTheme.ink500,
+                color: job.isOverdue ? AppTheme.rose : palette.faint,
               ),
               const SizedBox(width: 9),
               Text(
@@ -283,13 +301,13 @@ class _Header extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
-                  color: job.isOverdue ? AppTheme.rose : AppTheme.ink700,
+                  color: job.isOverdue ? AppTheme.rose : palette.muted,
                 ),
               ),
               const Spacer(),
               Text(
                 Fmt.date(job.promisedAt),
-                style: const TextStyle(fontSize: 12.5, color: AppTheme.ink500),
+                style: TextStyle(fontSize: 12.5, color: palette.faint),
               ),
             ],
           ),
@@ -297,6 +315,7 @@ class _Header extends StatelessWidget {
       ],
     ),
   );
+  }
 }
 
 class _Complaint extends StatelessWidget {
@@ -305,17 +324,23 @@ class _Complaint extends StatelessWidget {
   final MechanicJob job;
 
   @override
-  Widget build(BuildContext context) => SectionCard(
-    title: 'COMPLAINT & NOTES',
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
+    return SectionCard(
+    title: t('job.complaintNotes'),
     child: Text(
-      job.complaint.isEmpty ? 'No complaint recorded.' : job.complaint,
+      job.complaint.isEmpty ? t('job.noComplaint') : job.complaint,
       style: TextStyle(
         fontSize: 14,
         height: 1.5,
-        color: job.complaint.isEmpty ? AppTheme.ink400 : AppTheme.ink700,
+        color: job.complaint.isEmpty ? palette.faint : palette.muted,
       ),
     ),
   );
+  }
 }
 
 class _Details extends StatelessWidget {
@@ -353,8 +378,11 @@ class _Location extends StatelessWidget {
   final MechanicJob job;
 
   @override
-  Widget build(BuildContext context) => SectionCard(
-    title: 'CUSTOMER LOCATION',
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    return SectionCard(
+    title: t('job.customerLocation'),
     child: LocationCard(
       latitude: job.customerLatitude!,
       longitude: job.customerLongitude!,
@@ -362,6 +390,7 @@ class _Location extends StatelessWidget {
       address: job.customerAddress,
     ),
   );
+  }
 }
 
 class _Lines extends StatelessWidget {
@@ -371,15 +400,20 @@ class _Lines extends StatelessWidget {
   final VoidCallback onAddService;
 
   @override
-  Widget build(BuildContext context) => SectionCard(
-    title: 'WORK ON THIS JOB',
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
+    return SectionCard(
+    title: t('job.workOnThis'),
     // Same affordance as the photos section above — an "Add" in the header
     // rather than a third button in the bottom bar, which would leave three
     // competing actions and no obvious primary one.
     trailing: TextButton.icon(
       onPressed: onAddService,
       icon: const Icon(Icons.add_rounded, size: 16),
-      label: const Text('Service'),
+      label: Text('Service'),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: Size.zero,
@@ -387,14 +421,13 @@ class _Lines extends StatelessWidget {
       ),
     ),
     child: lines.isEmpty
-        ? const Padding(
+        ? Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
               child: Text(
-                'Nothing costed yet.\n'
-                'Add a wash or a polish if the car needs one.',
+                '${t('job.nothingCosted')}\n${t('job.addAWash')}',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppTheme.ink400),
+                style: TextStyle(fontSize: 13, color: palette.faint),
               ),
             ),
           )
@@ -416,23 +449,23 @@ class _Lines extends StatelessWidget {
                         // mechanic can add, so they are the ones worth finding.
                         color: line.isService
                             ? AppTheme.cyan
-                            : AppTheme.ink400,
+                            : palette.faint,
                       ),
                       const SizedBox(width: 9),
                       Expanded(
                         child: Text(
                           line.description,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13.5,
-                            color: AppTheme.ink700,
+                            color: palette.muted,
                           ),
                         ),
                       ),
                       Text(
                         '×${Fmt.number(line.qty)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
-                          color: AppTheme.ink400,
+                          color: palette.faint,
                         ),
                       ),
                     ],
@@ -441,6 +474,7 @@ class _Lines extends StatelessWidget {
             ],
           ),
   );
+  }
 }
 
 class _Photos extends StatelessWidget {
@@ -455,12 +489,17 @@ class _Photos extends StatelessWidget {
   final void Function(JobPhoto) onDelete;
 
   @override
-  Widget build(BuildContext context) => SectionCard(
-    title: 'PHOTOS (${photos.length})',
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
+    return SectionCard(
+    title: t('job.photosCount', [photos.length]),
     trailing: TextButton.icon(
       onPressed: onAdd,
       icon: const Icon(Icons.add_rounded, size: 16),
-      label: const Text('Add'),
+      label: Text('Add'),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: Size.zero,
@@ -468,20 +507,20 @@ class _Photos extends StatelessWidget {
       ),
     ),
     child: photos.isEmpty
-        ? const Padding(
+        ? Padding(
             padding: EdgeInsets.symmetric(vertical: 18),
             child: Center(
               child: Text(
-                'No photos yet.\nPhotos help the customer see the work.',
+                '${t('job.noPhotos')}\n${t('job.photosHelp')}',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppTheme.ink400),
+                style: TextStyle(fontSize: 13, color: palette.faint),
               ),
             ),
           )
         : GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
@@ -507,16 +546,16 @@ class _Photos extends StatelessWidget {
                         photo.url,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => Container(
-                          color: AppTheme.ink100,
-                          child: const Icon(
+                          color: palette.border,
+                          child: Icon(
                             Icons.broken_image_outlined,
-                            color: AppTheme.ink400,
+                            color: palette.faint,
                           ),
                         ),
                         loadingBuilder: (_, child, progress) =>
                             progress == null
                             ? child
-                            : Container(color: AppTheme.ink100),
+                            : Container(color: palette.border),
                       ),
                       Positioned(
                         left: 4,
@@ -547,4 +586,5 @@ class _Photos extends StatelessWidget {
             },
           ),
   );
+  }
 }

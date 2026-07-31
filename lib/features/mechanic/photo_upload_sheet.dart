@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_exception.dart';
 import '../../core/config.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/photo.dart';
 import '../../services/mechanic_service.dart';
@@ -79,7 +80,12 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+
+    final palette = AppTheme.of(context);
+
+    return Padding(
     padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
     child: SafeArea(
       child: SingleChildScrollView(
@@ -93,18 +99,18 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.ink200,
+                  color: palette.border,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
             ),
             const SizedBox(height: 18),
 
-            Text('Add a photo', style: Theme.of(context).textTheme.titleLarge),
+            Text(t('photo.add'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 3),
-            const Text(
-              'The customer can see these on their job.',
-              style: TextStyle(fontSize: 13, color: AppTheme.ink500),
+            Text(
+              t('photo.customerSees'),
+              style: TextStyle(fontSize: 13, color: palette.faint),
             ),
             const SizedBox(height: 18),
 
@@ -164,12 +170,12 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
               ),
 
             const SizedBox(height: 18),
-            const Text(
-              'WHAT IS THIS SHOWING?',
+            Text(
+              t('photo.whatShowing'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.ink400,
+                color: palette.faint,
                 letterSpacing: 0.6,
               ),
             ),
@@ -187,10 +193,10 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
                     labelStyle: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: _kind == kind ? AppTheme.brand : AppTheme.ink700,
+                      color: _kind == kind ? AppTheme.brand : palette.muted,
                     ),
                     side: BorderSide(
-                      color: _kind == kind ? AppTheme.brand : AppTheme.ink200,
+                      color: _kind == kind ? AppTheme.brand : palette.border,
                     ),
                   ),
               ],
@@ -200,13 +206,13 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
             TextField(
               controller: _caption,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Caption',
-                hintText: 'Worn front left pad',
+                hintText: t('photo.captionHint'),
                 helperText: 'Optional',
                 helperStyle: TextStyle(
                   fontSize: 11.5,
-                  color: AppTheme.ink400,
+                  color: palette.faint,
                 ),
               ),
             ),
@@ -223,13 +229,14 @@ class _PhotoUploadSheetState extends State<PhotoUploadSheet> {
                         valueColor: AlwaysStoppedAnimation(Colors.white),
                       ),
                     )
-                  : Text(_file == null ? 'Choose a photo first' : 'Upload'),
+                  : Text(_file == null ? t('photo.chooseFirst') : 'Upload'),
             ),
           ],
         ),
       ),
     ),
   );
+  }
 }
 
 class _PickButton extends StatelessWidget {
@@ -244,8 +251,11 @@ class _PickButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: AppTheme.ink50,
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Material(
+    color: palette.field,
     borderRadius: BorderRadius.circular(AppTheme.radius),
     child: InkWell(
       onTap: onTap,
@@ -254,7 +264,7 @@ class _PickButton extends StatelessWidget {
         height: 104,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radius),
-          border: Border.all(color: AppTheme.ink200),
+          border: Border.all(color: palette.border),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -263,10 +273,10 @@ class _PickButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.ink700,
+                color: palette.muted,
               ),
             ),
           ],
@@ -274,4 +284,5 @@ class _PickButton extends StatelessWidget {
       ),
     ),
   );
+  }
 }

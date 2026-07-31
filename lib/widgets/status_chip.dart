@@ -67,7 +67,7 @@ class MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = color ?? AppTheme.ink500;
+    final tone = color ?? AppTheme.of(context).faint;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
