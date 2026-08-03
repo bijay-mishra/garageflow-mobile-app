@@ -5,9 +5,20 @@ import 'bikram_sambat.dart';
 
 /// Dates and money, formatted the way the dashboard formats them.
 ///
-/// The web app writes "Rs 12,500" and "24 Jul 2026"; the phone must not invent
+/// The web app writes "Rs 12,500" and "2026/07/24"; the phone must not invent
 /// its own conventions, or the same invoice reads two different ways depending
 /// on where you look at it.
+///
+/// ## Why dates are numerals
+///
+/// Year first, zero-padded, slash-separated — never a month name. "Jun" and
+/// "Jul" differ by one letter and "असार" and "साउन" are adjacent months, which
+/// is fine in prose and not fine in a list of jobs being scanned down a column
+/// on a phone in a workshop. Numerals sort, align and compare at a glance.
+///
+/// Year-first also keeps the two calendars the same shape: 2026/07/24 and
+/// 2083/04/08 have their digits in the same places, so switching language moves
+/// the numbers without moving the layout.
 ///
 /// ## Language
 ///
@@ -32,17 +43,15 @@ class Fmt {
 
   static bool get _nepali => language == 'ne';
 
-  static final _date = DateFormat('d MMM yyyy');
-  static final _shortDate = DateFormat('d MMM');
-  static final _dayAndDate = DateFormat('EEE, d MMM');
+  static final _weekday = DateFormat('EEE');
   static final _time = DateFormat('h:mm a');
   static final _number = NumberFormat('#,##0');
   static final _decimal = NumberFormat('#,##0.##');
 
   /// Rewrites ASCII digits as Devanagari.
   ///
-  /// Applied to money and counts as well as dates: a screen showing "१५ साउन"
-  /// next to "Rs 2,400" looks like two different products.
+  /// Money and counts only. Dates are deliberately exempt — see the note on
+  /// [date].
   static String _digits(String value) {
     if (!_nepali) return value;
 
@@ -59,41 +68,68 @@ class Fmt {
   /// falling back to Gregorian is more honest than rendering a wrong BS date.
   static NepaliDateTime? _bs(DateTime value) => Bs.from(value);
 
+  static String _pad(int n) => n.toString().padLeft(2, '0');
+
+  /// `2026/07/24`, Gregorian.
+  static String _ad(DateTime value) =>
+      '${value.year}/${_pad(value.month)}/${_pad(value.day)}';
+
+  /// `2083/04/08`, Bikram Sambat.
+  static String _bsNumeric(NepaliDateTime bs) =>
+      '${bs.year}/${_pad(bs.month)}/${_pad(bs.day)}';
+
+  /// A date, in whichever calendar the language keeps books in — always in
+  /// Latin numerals.
+  ///
+  /// English gets Gregorian, "2026/07/24". Nepali gets Bikram Sambat, but
+  /// written "2083/04/08" rather than "२०८३/०४/०८".
+  ///
+  /// The calendar switches and the script does not, and those are two separate
+  /// questions. Which calendar a date is in changes *what day it is*; which
+  /// numerals it is written in changes only how it looks. A mechanic reading
+  /// the app in Nepali is still typing plate numbers on a Latin keypad and
+  /// still comparing this column against a printed job sheet — Devanagari made
+  /// the date the one field that could not be read alongside everything beside
+  /// it.
   static String date(DateTime? value) {
     if (value == null) return '—';
-    if (!_nepali) return _date.format(value);
+    if (!_nepali) return _ad(value);
 
     final bs = _bs(value);
-    if (bs == null) return _date.format(value);
+    if (bs == null) return _ad(value);
 
-    return _digits('${bs.day} ${_bsMonths[bs.month - 1]} ${bs.year}');
+    return _bsNumeric(bs);
   }
 
+  /// The same date without the year, for rows where the year is obvious from
+  /// context — today's work, this week's bookings.
   static String shortDate(DateTime? value) {
     if (value == null) return '—';
-    if (!_nepali) return _shortDate.format(value);
+    if (!_nepali) return '${_pad(value.month)}/${_pad(value.day)}';
 
     final bs = _bs(value);
-    if (bs == null) return _shortDate.format(value);
+    if (bs == null) return '${_pad(value.month)}/${_pad(value.day)}';
 
-    return _digits('${bs.day} ${_bsMonths[bs.month - 1]}');
+    return '${_pad(bs.month)}/${_pad(bs.day)}';
   }
 
   static String dayAndDate(DateTime? value) {
     if (value == null) return '—';
-    if (!_nepali) return _dayAndDate.format(value);
 
-    final bs = _bs(value);
-    if (bs == null) return _dayAndDate.format(value);
+    // The weekday survives the switch to numerals: it is the one part of a date
+    // that is not a number, and "is that a Saturday" is a real question about a
+    // promised date.
+    final weekday =
+        _nepali ? _neWeekdays[value.weekday % 7] : _weekday.format(value);
 
-    // Weekday first, as the English form does — Sunday is index 1 in BS.
-    final weekday = _neWeekdays[value.weekday % 7];
-    return _digits('$weekday, ${bs.day} ${_bsMonths[bs.month - 1]}');
+    return '$weekday ${shortDate(value)}';
   }
 
   /// Clock time. Not converted — a BS date does not change what o'clock it is,
-  /// and Nepal has one timezone.
-  static String time(DateTime value) => _digits(_time.format(value));
+  /// and Nepal has one timezone. Latin numerals, for the same reason dates are:
+  /// a row reading "2083/04/08" beside "१२:३० अपराह्न" is one timestamp written
+  /// two ways.
+  static String time(DateTime value) => _time.format(value);
 
   /// Nepali rupees, matching the dashboard's `formatRs`.
   ///
@@ -106,21 +142,10 @@ class Fmt {
 
   static String km(num value) => '${_digits(_number.format(value))} km';
 
-  /// Bikram Sambat months, Baisakh first.
-  static const _bsMonths = [
-    'बैशाख',
-    'जेठ',
-    'असार',
-    'साउन',
-    'भदौ',
-    'असोज',
-    'कार्तिक',
-    'मंसिर',
-    'पुष',
-    'माघ',
-    'फागुन',
-    'चैत',
-  ];
+  // The BS month names that used to live here went with the named-month
+  // format. The dashboard still keeps a list of them, because its date *input*
+  // has a month dropdown to fill — picking a month is the one place a name
+  // beats a number. The phone has no such control, so nothing here needs them.
 
   /// Indexed by `DateTime.weekday % 7`, so Sunday lands at 0.
   static const _neWeekdays = [
@@ -196,7 +221,7 @@ class Fmt {
       1 => 'Due tomorrow',
       -1 => '1 day late',
       < -1 => '${-days} days late',
-      _ => 'Due ${_shortDate.format(promised)}',
+      _ => 'Due ${shortDate(promised)}',
     };
   }
 

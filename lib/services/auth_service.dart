@@ -82,12 +82,79 @@ class AuthService {
     return AuthUser.fromJson(data);
   }
 
-  Future<void> forgotPassword({
+  // ── Forgotten password ─────────────────────────────────────────────────────
+  // Three steps: ask for a code, check it, choose a new password.
+  //
+  // A code and not a link. The server used to email a reset link, which opens a
+  // browser rather than this app — following it back into Flutter needs Android
+  // App Links and a verified assetlinks.json on a public HTTPS domain, which
+  // does not exist yet. So the phone could ask for a reset and then do nothing
+  // with the mail that arrived. Six digits need no such plumbing.
+
+  /// Asks for a six-digit code by email.
+  ///
+  /// Succeeds whether or not the account exists — the server refuses to say, so
+  /// that this cannot be used to discover which addresses have accounts. There
+  /// is nothing to branch on and the screen moves on either way.
+  Future<PasswordResetTarget> forgotPassword({
     required String companyCode,
     required String email,
+  }) async {
+    final data = await _api.post<Map<String, dynamic>>(
+      '/auth/forgot-password',
+      body: {'companyCode': companyCode.trim(), 'email': email.trim()},
+      noAuth: true,
+    );
+
+    return PasswordResetTarget.fromJson(data);
+  }
+
+  /// Checks a code without spending it, so a mistyped digit is caught before
+  /// the user has chosen and confirmed a password.
+  Future<void> verifyResetCode({
+    required String companyCode,
+    required String email,
+    required String code,
   }) => _api.post<dynamic>(
-    '/auth/forgot-password',
-    body: {'companyCode': companyCode.trim(), 'email': email.trim()},
+    '/auth/verify-reset-code',
+    body: {
+      'companyCode': companyCode.trim(),
+      'email': email.trim(),
+      'code': code.trim(),
+    },
     noAuth: true,
   );
+
+  /// Spends the code and sets the new password. Signs out every device.
+  Future<void> resetPassword({
+    required String companyCode,
+    required String email,
+    required String code,
+    required String newPassword,
+  }) => _api.post<dynamic>(
+    '/auth/reset-password',
+    body: {
+      'companyCode': companyCode.trim(),
+      'email': email.trim(),
+      'code': code.trim(),
+      'newPassword': newPassword,
+    },
+    noAuth: true,
+  );
+}
+
+/// Where a reset code went, and how long it lasts.
+class PasswordResetTarget {
+  const PasswordResetTarget({required this.sentTo, required this.expiresInMinutes});
+
+  /// Masked, e.g. `ra••••@gmail.com`. Built by the server from what was typed
+  /// rather than from the account, so it says nothing about whether one exists.
+  final String sentTo;
+  final int expiresInMinutes;
+
+  factory PasswordResetTarget.fromJson(Map<String, dynamic> json) =>
+      PasswordResetTarget(
+        sentTo: json['sentTo'] as String? ?? '',
+        expiresInMinutes: json['expiresInMinutes'] as int? ?? 15,
+      );
 }
