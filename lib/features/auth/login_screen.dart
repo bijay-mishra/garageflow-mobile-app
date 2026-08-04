@@ -7,8 +7,8 @@ import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/auth_controller.dart';
 import 'forgot_password_screen.dart';
-import 'google_button.dart';
 import 'signup_screen.dart';
+import 'social_sign_in.dart';
 
 /// The GarageFlow logo — a wrench in a rounded tile.
 ///
@@ -37,11 +37,22 @@ class BrandMark extends StatelessWidget {
 
 /// Who is signing in.
 ///
-/// Not a cosmetic tab. The two audiences have genuinely different credentials:
-/// staff belong to one workshop and prove it with a company code, while a
-/// customer's account sits above every garage and has no code to give. The
-/// server accepts both shapes; this is where the app stops asking customers for
-/// something they cannot know.
+/// The two audiences genuinely have different credentials: staff belong to one
+/// workshop and prove it with a company code, while a customer's account sits
+/// above every garage and has no code to give. The server accepts both shapes;
+/// this is where the app stops asking customers for something they cannot know.
+///
+/// It is *not* a 50/50 choice, and it used to be drawn as one — a segmented
+/// Customer | Staff control above the form. That made every customer answer a
+/// question about the app's internal structure before they could type anything,
+/// and handed half the screen to the smaller audience. This is a customer app:
+/// nearly everyone who opens it is a customer, and the occasional mechanic
+/// knows perfectly well that they are staff.
+///
+/// So the screen opens as a plain customer form and staff take a quiet link at
+/// the bottom. It stays one form underneath — [staff] only adds the company
+/// code field and sends it — rather than a second screen duplicating the email,
+/// password, validation and error handling.
 enum _SignInAs { customer, staff }
 
 class LoginScreen extends StatefulWidget {
@@ -121,8 +132,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _AudienceToggle(value: _as, onChanged: _switchTo),
-                          const SizedBox(height: 22),
+                          // Only staff get a heading. The customer form needs
+                          // none — the hero above already says GarageFlow, and
+                          // a second "Sign in" over two fields is noise.
+                          if (isStaff) ...[
+                            _StaffHeader(
+                              onBack: () => _switchTo(_SignInAs.customer),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           if (auth.expiryNotice != null) ...[
                             _Notice(
@@ -141,6 +159,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 14),
                           ],
+
+                          // Customers only, and above the form on purpose:
+                          // somebody who signs in with Google should not have
+                          // to read past fields they will never fill in. Staff
+                          // accounts are created by their workshop and have no
+                          // provider behind them.
+                          if (!isStaff) const SocialSignIn(),
 
                           // Staff only. Animated rather than swapped so the
                           // form does not jump when the mode changes.
@@ -289,9 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // cannot, so offering it in that mode would be an
                           // invitation to a dead end.
                           if (!isStaff) ...[
-                            const SizedBox(height: 20),
-                            const GoogleSignInButton(),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -312,6 +335,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ],
                             ),
+
+                            // The staff door. Below everything a customer
+                            // needs, quiet enough to ignore, and unmissable if
+                            // you came here looking for it.
+                            const SizedBox(height: 18),
+                            _StaffDoor(onTap: () => _switchTo(_SignInAs.staff)),
                           ] else
                             const SizedBox(height: 10),
 
@@ -381,97 +410,134 @@ class _Hero extends StatelessWidget {
   }
 }
 
-/// Customer / staff, as a sliding segmented control.
-class _AudienceToggle extends StatelessWidget {
-  const _AudienceToggle({required this.value, required this.onChanged});
+/// The way in for mechanics and workshop staff, at the foot of the customer form.
+///
+/// A bordered row rather than a bare TextButton. This is the one control on the
+/// screen that changes what the form *is*, so it needs enough weight to read as
+/// a destination — but it sits below the sign-up line and stays in the muted
+/// palette, because for almost everyone opening this app it is the wrong door.
+class _StaffDoor extends StatelessWidget {
+  const _StaffDoor({required this.onTap});
 
-  final _SignInAs value;
-  final ValueChanged<_SignInAs> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppTheme.of(context);
-
-    return Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: palette.border,
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Row(
-      children: [
-        _Segment(
-          label: AppText.of(context)('auth.customer'),
-          icon: Icons.directions_car_rounded,
-          selected: value == _SignInAs.customer,
-          onTap: () => onChanged(_SignInAs.customer),
-        ),
-        _Segment(
-          label: AppText.of(context)('auth.staff'),
-          icon: Icons.build_rounded,
-          selected: value == _SignInAs.staff,
-          onTap: () => onChanged(_SignInAs.staff),
-        ),
-      ],
-    ),
-  );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final t = AppText.of(context);
     final palette = AppTheme.of(context);
 
-    return Expanded(
-    child: GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(vertical: 11),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: selected ? AppTheme.shadowCard : null,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          border: Border.all(color: palette.border),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? AppTheme.brand : palette.faint,
+            Icon(Icons.build_rounded, size: 18, color: palette.faint),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${t('auth.staffPrompt')} ',
+                      style: TextStyle(fontSize: 13.5, color: palette.faint),
+                    ),
+                    TextSpan(
+                      text: t('auth.staffLink'),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.brand,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: selected ? palette.text : palette.faint,
+            Icon(Icons.chevron_right_rounded, size: 20, color: palette.faint),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The heading over the staff form, and the way back out of it.
+///
+/// The way back matters more than it looks: without it a customer who tapped
+/// the staff link out of curiosity is stranded in a form asking for a company
+/// code they have never been given, with nothing to say this is the wrong place.
+class _StaffHeader extends StatelessWidget {
+  const _StaffHeader({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+    final palette = AppTheme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppTheme.brandLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.build_rounded,
+                size: 19,
+                color: AppTheme.brand,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                t('auth.staffTitle'),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: palette.text,
+                ),
               ),
             ),
           ],
         ),
-      ),
-    ),
-  );
+        const SizedBox(height: 10),
+        Text(
+          t('auth.staffSubtitle'),
+          style: TextStyle(fontSize: 13, color: palette.faint, height: 1.4),
+        ),
+        // Padding cancelled so the link aligns with the text above it rather
+        // than sitting proud of this block.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: onBack,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.arrow_back_rounded, size: 16),
+            label: Text(t('auth.backToCustomer')),
+          ),
+        ),
+      ],
+    );
   }
 }
 
-/// An inline banner — an error, or an explanation of why you are back here.
 class _Notice extends StatelessWidget {
   const _Notice(this.message, {required this.icon, required this.color});
 

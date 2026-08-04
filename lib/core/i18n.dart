@@ -121,6 +121,37 @@ const Map<String, String> _en = {
   'auth.showPassword': 'Show password',
   'auth.hidePassword': 'Hide password',
   'auth.or': 'or',
+  'auth.orWithEmail': 'or continue with email',
+
+  // ── Chat with the garage ────────────────────────────────────────────────
+  'support.title': 'Help',
+  'support.subtitle': 'Ask about your vehicle or a bill',
+  'support.withGarage': 'The garage is answering',
+  'support.past': 'Past conversations',
+  'support.newChat': 'New conversation',
+  'support.loading': 'Loading…',
+  'support.thinking': 'Thinking…',
+  'support.placeholder': 'Type your question…',
+  'support.talkToGarage': 'Talk to the garage instead',
+  'support.garageHasIt': 'The garage has this. They will reply here.',
+  'support.waiting': 'waiting',
+  'support.aiAnswer': 'AI answer',
+  'support.introTitle': 'Ask us anything',
+  'support.introBody':
+      'When your vehicle will be ready, what is on a bill, how to book a '
+      'service. The assistant answers straight away and passes anything it '
+      'cannot to the garage.',
+
+  // The sign-in screen is a customer screen. Staff reach their form through a
+  // door off the side of it, rather than everyone having to answer "who are
+  // you" before they can type — see the note on _SignInAs in login_screen.dart.
+  'auth.staffPrompt': 'Work at a garage?',
+  'auth.staffLink': 'Staff sign-in',
+  'auth.staffTitle': 'Staff sign-in',
+  'auth.staffSubtitle':
+      'For mechanics and workshop staff. You will need the company code your '
+      'workshop gave you.',
+  'auth.backToCustomer': 'Back to customer sign-in',
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.forgotPassword': 'Forgot password?',
   'forgot.title': 'Reset password',
@@ -175,6 +206,16 @@ const Map<String, String> _en = {
   'garages.search': 'Search by name or area',
   'garages.join': 'Join this garage',
   'garages.joining': 'Joining…',
+
+  // Asked before joining. {0} is the garage's name — named rather than "this
+  // garage", because on a list of look-alike cards the whole point of the
+  // question is to show which one the tap landed on.
+  'garages.joinConfirmTitle': 'Join {0}?',
+  'garages.joinConfirm':
+      'They will be able to see your name, phone number and the vehicles you '
+      'add here, so they can service them.',
+  'garages.joinConfirmLeave': 'You can leave again at any time from your profile.',
+  'garages.joinConfirmAction': 'Join',
   'garages.switchTo': 'Switch to this garage',
   'garages.viewing': 'You are viewing this garage',
   'garages.current': 'Current',
@@ -616,6 +657,31 @@ const Map<String, String> _ne = {
   'auth.showPassword': 'पासवर्ड देखाउनुहोस्',
   'auth.hidePassword': 'पासवर्ड लुकाउनुहोस्',
   'auth.or': 'वा',
+  'auth.orWithEmail': 'वा इमेलबाट जारी राख्नुहोस्',
+
+  'support.title': 'सहयोग',
+  'support.subtitle': 'सवारी वा बिलबारे सोध्नुहोस्',
+  'support.withGarage': 'ग्यारेजले जवाफ दिँदैछ',
+  'support.past': 'पुराना कुराकानी',
+  'support.newChat': 'नयाँ कुराकानी',
+  'support.loading': 'लोड हुँदै…',
+  'support.thinking': 'सोच्दै…',
+  'support.placeholder': 'आफ्नो प्रश्न लेख्नुहोस्…',
+  'support.talkToGarage': 'ग्यारेजसँग कुरा गर्नुहोस्',
+  'support.garageHasIt': 'ग्यारेजले हेर्दैछ। यहीँ जवाफ आउनेछ।',
+  'support.waiting': 'पर्खिँदै',
+  'support.aiAnswer': 'AI जवाफ',
+  'support.introTitle': 'जे पनि सोध्नुहोस्',
+  'support.introBody':
+      'सवारी कहिले तयार हुन्छ, बिलमा के छ, सेवा कसरी बुक गर्ने। सहायकले तुरुन्तै '
+      'जवाफ दिन्छ र नसकेको कुरा ग्यारेजलाई पठाउँछ।',
+  'auth.staffPrompt': 'ग्यारेजमा काम गर्नुहुन्छ?',
+  'auth.staffLink': 'कर्मचारी साइन इन',
+  'auth.staffTitle': 'कर्मचारी साइन इन',
+  'auth.staffSubtitle':
+      'मेकानिक र वर्कशप कर्मचारीका लागि। तपाईंको वर्कशपले दिएको कम्पनी कोड '
+      'चाहिन्छ।',
+  'auth.backToCustomer': 'ग्राहक साइन इनमा फर्कनुहोस्',
   'auth.continueWithGoogle': 'Google बाट जारी राख्नुहोस्',
   'auth.forgotPassword': 'पासवर्ड बिर्सनुभयो?',
   'forgot.title': 'पासवर्ड रिसेट',
@@ -669,6 +735,13 @@ const Map<String, String> _ne = {
   'garages.search': 'नाम वा ठाउँले खोज्नुहोस्',
   'garages.join': 'यो ग्यारेजमा जोडिनुहोस्',
   'garages.joining': 'जोडिँदै…',
+  'garages.joinConfirmTitle': '{0} मा जोडिने?',
+  'garages.joinConfirm':
+      'तपाईंको नाम, फोन नम्बर र यहाँ थपिएका सवारीहरू उनीहरूले देख्न सक्नेछन्, '
+      'ताकि सर्भिस गर्न सकियोस्।',
+  'garages.joinConfirmLeave':
+      'जुनसुकै बेला प्रोफाइलबाट हट्न सकिन्छ।',
+  'garages.joinConfirmAction': 'जोडिनुहोस्',
   'garages.switchTo': 'यो ग्यारेजमा जानुहोस्',
   'garages.viewing': 'तपाईं यही ग्यारेज हेर्दै हुनुहुन्छ',
   'garages.current': 'हालको',

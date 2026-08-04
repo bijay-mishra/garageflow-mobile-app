@@ -10,6 +10,7 @@ import 'services/catalogue_service.dart';
 import 'services/customer_service.dart';
 import 'services/delivery_service.dart';
 import 'services/directory_service.dart';
+import 'services/support_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/mechanic_service.dart';
 import 'services/notification_service.dart';
@@ -52,6 +53,9 @@ Future<void> main() async {
         Provider(create: (_) => GoogleSignInService(api)),
         // Handovers. Shared: a driver and a customer look at the same record.
         Provider(create: (_) => DeliveryApi(api)),
+        // Chat with the garage. An assistant answers first and passes anything
+        // it cannot to a person at the workshop.
+        Provider(create: (_) => SupportService(api)),
         ChangeNotifierProvider(
           create: (context) => AuthController(
             api: api,

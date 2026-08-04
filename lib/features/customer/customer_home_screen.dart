@@ -20,6 +20,7 @@ import 'book_service_screen.dart';
 import 'customer_job_detail_screen.dart';
 import 'garage_directory_screen.dart';
 import 'handover_sheet.dart';
+import 'support_screen.dart';
 import 'track_delivery_screen.dart';
 
 /// The customer's home: is my car ready, and when.
@@ -209,6 +210,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   icon: Icons.storefront_outlined,
                   tooltip: t('home.yourGarages'),
                   onPressed: _switchGarage,
+                ),
+                // On the screen people land on, because the question they want
+                // to ask is almost always about something they can see here.
+                HeaderAction(
+                  icon: Icons.support_agent_rounded,
+                  tooltip: t('support.title'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SupportScreen()),
+                  ),
                 ),
               ],
               // The headline card. A handover awaiting an answer outranks

@@ -34,44 +34,28 @@ class GoogleSignInButton extends StatelessWidget {
     final palette = AppTheme.of(context);
     final t = AppText.of(context);
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: palette.border)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                t('auth.or'),
-                style: TextStyle(fontSize: 12, color: palette.faint),
-              ),
-            ),
-            Expanded(child: Divider(color: palette.border)),
-          ],
-        ),
-        const SizedBox(height: 16),
+    // Just the button. The "or" divider that used to live here belongs to
+    // SocialSignIn, which knows how many providers are on screen — this widget
+    // does not, and two configured providers would have drawn two dividers.
+    return OutlinedButton.icon(
+      onPressed: auth.busy
+          ? null
+          : () async {
+              final signedIn = await context
+                  .read<AuthController>()
+                  .signInWithGoogle(google);
 
-        OutlinedButton.icon(
-          onPressed: auth.busy
-              ? null
-              : () async {
-                  final signedIn = await context
-                      .read<AuthController>()
-                      .signInWithGoogle(google);
-
-                  if (signedIn) onSignedIn?.call();
-                  // A false result is either a cancel — nothing to say — or an
-                  // error the controller has already put on screen.
-                },
-          icon: const _GoogleMark(),
-          label: Text(t('auth.continueWithGoogle')),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-            foregroundColor: palette.text,
-            side: BorderSide(color: palette.border),
-          ),
-        ),
-      ],
+              if (signedIn) onSignedIn?.call();
+              // A false result is either a cancel — nothing to say — or an
+              // error the controller has already put on screen.
+            },
+      icon: const _GoogleMark(),
+      label: Text(t('auth.continueWithGoogle')),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        foregroundColor: palette.text,
+        side: BorderSide(color: palette.border),
+      ),
     );
   }
 }

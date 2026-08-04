@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../state/auth_controller.dart';
-import 'google_button.dart';
 import 'login_screen.dart' show BrandMark;
+import 'social_sign_in.dart';
 
 /// Free sign-up, for customers.
 ///
@@ -104,6 +104,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 16),
                           ],
 
+                          // Same order as the sign-in screen: the one-tap route
+                          // first, the form under an "or". Signing up with a
+                          // provider fills in the name and email this form is
+                          // about to ask for, so offering it after four fields
+                          // have already been typed is offering it too late.
+                          const SocialSignIn(),
+
                           _Field(
                             controller: _name,
                             label: t('signup.fullName'),
@@ -190,9 +197,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             busy: auth.busy,
                             onPressed: _submit,
                           ),
-
-                          const SizedBox(height: 20),
-                          const GoogleSignInButton(),
 
                           const SizedBox(height: 18),
                           Row(

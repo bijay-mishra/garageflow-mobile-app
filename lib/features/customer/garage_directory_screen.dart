@@ -126,6 +126,14 @@ class _GarageDirectoryScreenState extends State<GarageDirectoryScreen> {
   }
 
   Future<void> _join(WorkshopCard garage) async {
+    // Asked first, because joining is not a preference — it hands a real
+    // business the customer's name, phone number and vehicles, and on a list of
+    // similar cards a mistap lands on the wrong garage silently. The dialog
+    // names the garage so the tap can be checked before it counts.
+    if (!await _confirmJoin(garage)) return;
+
+    if (!mounted) return;
+
     setState(() => _joining = garage.companyCode);
 
     try {
@@ -156,6 +164,48 @@ class _GarageDirectoryScreenState extends State<GarageDirectoryScreen> {
       setState(() => _joining = null);
       showSnack(context, error.message, isError: true);
     }
+  }
+
+  /// Whether the customer confirmed joining [garage].
+  ///
+  /// Dismissing the dialog — tapping outside it or using the back gesture —
+  /// returns null, which counts as no. Anything else would make "get me out of
+  /// this" mean "yes".
+  Future<bool> _confirmJoin(WorkshopCard garage) async {
+    final t = AppText.of(context);
+    final palette = AppTheme.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t('garages.joinConfirmTitle', [garage.name])),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t('garages.joinConfirm')),
+            const SizedBox(height: 12),
+            // The reassurance goes under the consequence, not instead of it.
+            Text(
+              t('garages.joinConfirmLeave'),
+              style: TextStyle(fontSize: 12.5, color: palette.faint),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(t('garages.joinConfirmAction')),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed ?? false;
   }
 
   Future<void> _open(WorkshopCard garage) async {
