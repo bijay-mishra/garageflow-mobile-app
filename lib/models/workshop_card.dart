@@ -13,6 +13,7 @@ class WorkshopCard {
     required this.serviceCount,
     required this.isJoined,
     required this.isPrimary,
+    this.logoUrl,
     this.latitude,
     this.longitude,
     this.distanceKm,
@@ -34,6 +35,13 @@ class WorkshopCard {
   /// True when this is the garage the app currently opens on.
   final bool isPrimary;
 
+  /// The garage's logo, or null if it has not uploaded one.
+  ///
+  /// Carried because the API returns it, but deliberately not drawn anywhere in
+  /// this app: a tenant's mark goes on the invoices they issue, and every tile
+  /// on screen stays in GarageFlow's own colours. See [initial].
+  final String? logoUrl;
+
   final double? latitude;
   final double? longitude;
 
@@ -48,9 +56,9 @@ class WorkshopCard {
   String? get distanceLabel =>
       distanceKm == null ? null : '${distanceKm!.toStringAsFixed(1)} km away';
 
-  /// First letter, for the tile that stands in for a logo. A garage has not
-  /// uploaded one, and inventing a picture for a real business would be worse
-  /// than an initial.
+  /// First letter, for the tile the directory draws for every garage. An
+  /// initial rather than a stock storefront icon: every garage would otherwise
+  /// wear the same picture, and a letter is at least theirs.
   String get initial =>
       name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
 
@@ -64,6 +72,7 @@ class WorkshopCard {
     serviceCount: (json['serviceCount'] as num?)?.toInt() ?? 0,
     isJoined: json['isJoined'] as bool? ?? false,
     isPrimary: json['isPrimary'] as bool? ?? false,
+    logoUrl: json['logoUrl'] as String?,
     latitude: (json['latitude'] as num?)?.toDouble(),
     longitude: (json['longitude'] as num?)?.toDouble(),
     distanceKm: (json['distanceKm'] as num?)?.toDouble(),

@@ -434,6 +434,9 @@ class _GarageCard extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // The garage's initial on the product gradient, not its uploaded
+            // logo. Every tile on this screen stays in GarageFlow's colours;
+            // a tenant's own mark is for the invoices it issues.
             Container(
               width: 46,
               height: 46,
@@ -681,3 +684,4 @@ class _Resting extends StatelessWidget {
   );
   }
 }
+

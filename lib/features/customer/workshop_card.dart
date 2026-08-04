@@ -82,6 +82,10 @@ class _WorkshopCardState extends State<WorkshopCard> {
         children: [
           Row(
             children: [
+              // The product's own storefront glyph in the product's own colour,
+              // not the workshop's uploaded logo. A tenant's mark belongs on
+              // the documents they issue, not on the app's screens — see the
+              // note on the dashboard's Logo component.
               Container(
                 width: 38,
                 height: 38,
@@ -169,3 +173,4 @@ class _WorkshopCardState extends State<WorkshopCard> {
     );
   }
 }
+

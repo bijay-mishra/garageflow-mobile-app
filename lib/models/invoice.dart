@@ -98,6 +98,7 @@ class Workshop {
     required this.phone,
     required this.email,
     required this.taxNumber,
+    required this.logoUrl,
     required this.latitude,
     required this.longitude,
     required this.openingHours,
@@ -115,6 +116,10 @@ class Workshop {
   final String phone;
   final String email;
   final String taxNumber;
+
+  /// The workshop's logo, or null until it uploads one. Absolute, because the
+  /// phone has no idea what host the API is on.
+  final String? logoUrl;
 
   /// Map pin, or null until the workshop sets one.
   final double? latitude;
@@ -149,6 +154,7 @@ class Workshop {
     phone: json['phone'] as String? ?? '',
     email: json['email'] as String? ?? '',
     taxNumber: json['taxNumber'] as String? ?? '',
+    logoUrl: json['logoUrl'] as String?,
     latitude: (json['latitude'] as num?)?.toDouble(),
     longitude: (json['longitude'] as num?)?.toDouble(),
     openingHours: json['openingHours'] as String? ?? '',
