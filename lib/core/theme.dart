@@ -180,6 +180,21 @@ class AppTheme {
   static Color get headerPanel => Colors.white.withValues(alpha: 0.14);
   static Color get headerPanelBorder => Colors.white.withValues(alpha: 0.2);
 
+  /// An avatar drawn on the gradient.
+  ///
+  /// Stronger than [headerPanel] deliberately. A frosted tile is a background
+  /// for text and should recede; an avatar is a subject and should not. At the
+  /// panel's own 0.14/0.2 the circle came out around #4662B2 over the navy end
+  /// of the gradient — close enough to the band behind it that it read as a
+  /// smudge rather than a portrait, most obviously on the profile screen where
+  /// it is the largest thing on the header.
+  ///
+  /// Kept here rather than in the two widgets that draw it. `ProfileAvatar` and
+  /// `HeaderAvatar` are the same treatment at two sizes, and held identical by
+  /// copy-paste they would drift the first time one of them was adjusted.
+  static Color get avatarOnHeader => Colors.white.withValues(alpha: 0.22);
+  static Color get avatarOnHeaderBorder => Colors.white.withValues(alpha: 0.45);
+
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
       seedColor: brand,

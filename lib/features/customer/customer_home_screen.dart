@@ -16,6 +16,7 @@ import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/status_chip.dart';
+import 'add_vehicle_screen.dart';
 import 'book_service_screen.dart';
 import 'customer_job_detail_screen.dart';
 import 'garage_directory_screen.dart';
@@ -86,16 +87,40 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     }
   }
 
+  /// Opens the add-vehicle form. Returns true if one was actually added.
+  Future<bool> _addVehicle() async {
+    final t = AppText.of(context);
+
+    final vehicle = await Navigator.of(context).push<Vehicle>(
+      MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
+    );
+
+    if (vehicle == null || !mounted) return false;
+
+    // Reloaded rather than appended: the server assigns the id and fills in
+    // fields the form never asked about, and a locally-built Vehicle would be
+    // a slightly different object from the one every other screen sees.
+    await _load();
+    if (mounted) showSnack(context, t('vehicle.added', [vehicle.plate]));
+
+    return true;
+  }
+
   Future<void> _book() async {
     final t = AppText.of(context);
 
+    // Nothing to book against yet. Refusing here is what the app used to do,
+    // and it left the customer holding an error with no way out of it — the
+    // vehicle could only be added by the workshop. Asking for the vehicle at
+    // exactly the moment they need one, then carrying on into the booking they
+    // originally asked for, turns the dead end into the first step.
     if (_vehicles.isEmpty) {
-      showSnack(
-        context,
-        t('home.noVehiclesSnack'),
-        isError: true,
-      );
-      return;
+      // Deliberately not an error: they have done nothing wrong. The snack
+      // outlives the route change, so it reads as a caption on the form they
+      // are about to land on.
+      showSnack(context, t('home.noVehiclesSnack'));
+
+      if (!await _addVehicle() || !mounted) return;
     }
 
     final booked = await Navigator.of(context).push<bool>(
@@ -324,15 +349,34 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           const SizedBox(height: 20),
         ],
 
-        SectionLabel(t('home.yourVehicles')),
+        SectionLabel(
+          t('home.yourVehicles'),
+          // Only once there is a list to add to. On an empty account the
+          // empty state below carries the button, and two of them a hundred
+          // pixels apart asking for the same thing is just noise.
+          trailing: _vehicles.isEmpty
+              ? null
+              : TextButton.icon(
+                  onPressed: _addVehicle,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(t('vehicle.addCta')),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+        ),
         if (_vehicles.isEmpty)
           Padding(
-            padding: EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: 16),
             child: EmptyView(
               icon: Icons.directions_car_outlined,
               title: t('home.noVehiclesTitle'),
-              message:
-                  t('home.noVehiclesMessage'),
+              message: t('home.noVehiclesMessage'),
+              action: FilledButton.icon(
+                onPressed: _addVehicle,
+                icon: const Icon(Icons.add_rounded, size: 19),
+                label: Text(t('vehicle.addCta')),
+              ),
             ),
           )
         else
@@ -462,7 +506,11 @@ class _QuietCard extends StatelessWidget {
 
     return AppCard(
     lifted: true,
-    onTap: loading || !hasVehicles ? null : onBook,
+    // Tappable with no vehicles too: the caption below now offers to add one,
+    // and `onBook` opens the form before the booking. A card that advertises
+    // the next step and then does nothing when you press it is worse than one
+    // that says nothing at all.
+    onTap: loading ? null : onBook,
     child: Row(
       children: [
         Container(
@@ -504,7 +552,7 @@ class _QuietCard extends StatelessWidget {
             ],
           ),
         ),
-        if (!loading && hasVehicles)
+        if (!loading)
           Icon(
             Icons.chevron_right_rounded,
             size: 22,

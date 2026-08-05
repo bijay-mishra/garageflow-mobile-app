@@ -21,6 +21,41 @@ class CustomerService {
         .toList();
   }
 
+  /// Registers a vehicle on the signed-in customer's own account.
+  ///
+  /// No customer id goes up: the server takes the owner from the token, so this
+  /// can only ever add to your own account.
+  ///
+  /// [fuel] and [type] are sent as the server's own vocabulary rather than the
+  /// translated label on screen — the Nepali for "Petrol" is not a value the
+  /// API accepts.
+  Future<Vehicle> addVehicle({
+    required String plate,
+    required String make,
+    required String model,
+    required int year,
+    String type = 'Car',
+    String fuel = 'Petrol',
+    int odometer = 0,
+    String color = '',
+  }) async {
+    final data = await _api.post<Map<String, dynamic>>(
+      '/customer/vehicles',
+      body: {
+        'plate': plate.trim(),
+        'make': make.trim(),
+        'model': model.trim(),
+        'year': year,
+        'type': type,
+        'fuel': fuel,
+        'odometer': odometer,
+        'color': color.trim(),
+      },
+    );
+
+    return Vehicle.fromJson(data);
+  }
+
   /// Work on the customer's vehicles. [active] limits it to what is in the
   /// workshop now — the "track status" screen.
   Future<List<CustomerJob>> jobs({bool active = true, String? vehicleId}) async {

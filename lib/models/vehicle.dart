@@ -8,6 +8,18 @@ const vehicleTypes = <String>[
   'Tractor',
 ];
 
+/// Fuels, mirroring `Vocabulary.FuelTypes` on the server.
+///
+/// These are values, not labels. The API validates against these exact strings,
+/// so a screen shows a translation of them and sends the entry from this list.
+const fuelTypes = <String>[
+  'Petrol',
+  'Diesel',
+  'Electric',
+  'Hybrid',
+  'CNG',
+];
+
 /// A vehicle on the customer's account.
 class Vehicle {
   const Vehicle({

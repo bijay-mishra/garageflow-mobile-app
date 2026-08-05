@@ -347,9 +347,9 @@ class HeaderAvatar extends StatelessWidget {
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.18),
+      color: AppTheme.avatarOnHeader,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1.4),
+      border: Border.all(color: AppTheme.avatarOnHeaderBorder, width: 1.4),
     ),
     child: Text(
       initials,

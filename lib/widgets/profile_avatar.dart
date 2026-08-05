@@ -32,7 +32,7 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = onDark
-        ? Colors.white.withValues(alpha: 0.28)
+        ? AppTheme.avatarOnHeaderBorder
         : AppTheme.of(context).border;
 
     return Container(
@@ -42,7 +42,7 @@ class ProfileAvatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: onDark
-            ? Colors.white.withValues(alpha: 0.18)
+            ? AppTheme.avatarOnHeader
             : AppTheme.brand.withValues(alpha: 0.12),
         shape: BoxShape.circle,
         border: Border.all(color: border, width: 1.4),

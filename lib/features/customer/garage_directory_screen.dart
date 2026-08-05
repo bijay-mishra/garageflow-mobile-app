@@ -247,7 +247,13 @@ class _GarageDirectoryScreenState extends State<GarageDirectoryScreen> {
                   : joinedCount > 0
                   ? '$joinedCount ${t('garages.joined')}'
                   : t('garages.listed'),
-              onBack: widget.mustChoose ? null : () => Navigator.pop(context),
+              // No back arrow when there is nothing to go back to. That covers
+              // both the must-choose screen a new account lands on and the
+              // Garages tab, where this screen is the destination rather than
+              // somewhere you were pushed to.
+              onBack: widget.mustChoose || !Navigator.of(context).canPop()
+                  ? null
+                  : () => Navigator.pop(context),
               actions: [
                 HeaderAction(
                   icon: _lat == null

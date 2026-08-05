@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api_exception.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../../services/notification_service.dart';
 import '../../state/auth_controller.dart';
 import '../../state/settings_controller.dart';
 import '../../widgets/gradient_header.dart';
@@ -102,6 +104,7 @@ class ProfileScreen extends StatelessWidget {
                           : null,
                       onTap: () => _open(context, const SecurityScreen()),
                     ),
+                    const _NotificationsRow(),
                     // Customers only: a mechanic's workshop is the one that
                     // issued their login, so there is nothing to switch.
                     if (user.isCustomer)
@@ -242,6 +245,90 @@ class _Group extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// The notifications switch.
+///
+/// Its own stateful widget rather than lifting state into [ProfileScreen],
+/// which is stateless and shared by both shells — one row that needs to load
+/// and save a value is not a reason to make the whole screen stateful.
+///
+/// The preference lives on the server, so the switch is read on open rather
+/// than assumed. It flips optimistically and rolls back if the save fails: a
+/// switch that visibly does nothing for a second reads as broken, and one that
+/// silently lies about being off is worse.
+class _NotificationsRow extends StatefulWidget {
+  const _NotificationsRow();
+
+  @override
+  State<_NotificationsRow> createState() => _NotificationsRowState();
+}
+
+class _NotificationsRowState extends State<_NotificationsRow> {
+  bool? _enabled;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final enabled = await context.read<NotificationApi>().notificationsEnabled();
+      if (mounted) setState(() => _enabled = enabled);
+    } on ApiException {
+      // A row that cannot read its own value shows the default rather than an
+      // error: this is a settings list, not a screen whose job is this switch.
+      if (mounted) setState(() => _enabled = true);
+    }
+  }
+
+  Future<void> _toggle(bool next) async {
+    if (_busy) return;
+
+    final previous = _enabled;
+
+    setState(() {
+      _enabled = next;
+      _busy = true;
+    });
+
+    try {
+      final saved = await context.read<NotificationApi>().setNotificationsEnabled(next);
+      if (mounted) setState(() { _enabled = saved; _busy = false; });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+
+      setState(() { _enabled = previous; _busy = false; });
+      showSnack(context, error.message, isError: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+    final enabled = _enabled ?? true;
+
+    return _Row(
+      icon: enabled
+          ? Icons.notifications_active_outlined
+          : Icons.notifications_off_outlined,
+      title: t('profile.notifications'),
+      subtitle: enabled
+          ? t('profile.notificationsOn')
+          : t('profile.notificationsOff'),
+      trailing: Switch(
+        value: enabled,
+        onChanged: _enabled == null || _busy ? null : _toggle,
+      ),
+      // Tapping the row does what tapping the switch does — a settings row with
+      // a switch on it that only responds at the switch is a small daily
+      // annoyance.
+      onTap: _enabled == null || _busy ? () {} : () => _toggle(!enabled),
+    );
+  }
 }
 
 class _Row extends StatelessWidget {
