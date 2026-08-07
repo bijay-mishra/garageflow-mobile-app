@@ -1,5 +1,0 @@
-package com.garageflow.garageflow_mobile
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()

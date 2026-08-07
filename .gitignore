@@ -43,3 +43,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# The Play Store upload key. android/.gitignore already covers *.jks, but only
+# inside android/ — this one sits at the repo root, so nothing was matching it.
+#
+# This file is not replaceable. Every future update has to be signed with the
+# same key: committing it lets anyone with repo access publish as us, and
+# losing it means the listing can never be updated again. Back it up somewhere
+# outside the repository.
+*.jks
+*.keystore
