@@ -35,8 +35,40 @@ discovering at review.
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | **Yes** |
-| Is all of the user data collected by your app encrypted in transit? | **Yes** — but only true if the shipped build points at HTTPS. `network_security_config.xml` permits cleartext for local development addresses only, so this holds as long as the release build is not aimed at an `http://` host. |
+| Is all of the user data collected by your app encrypted in transit? | **Not as the app is built today.** See the second blocker below. |
 | Do you provide a way for users to request that their data is deleted? | **Not yet** — see the blocker above. |
+
+---
+
+## Blocker: the API is served over plain HTTP
+
+`AppConfig.apiBaseUrl` points at `http://202.51.3.68:8013`, and
+`network_security_config.xml` names that host so Android permits the cleartext.
+The app works. Everything it sends — the password typed at sign-in, the bearer
+token on every request afterwards, customer names, phone numbers, addresses,
+invoice amounts — travels unencrypted, readable by anything between the phone
+and the server.
+
+That is a reasonable state for a test build. It is not one to publish:
+
+- **The answer above becomes No.** Google asks the encryption question
+  directly, and answering Yes on an HTTP build is a false declaration on a
+  binding form, which is a worse problem than the missing encryption.
+- Play flags cleartext during pre-launch review. It is not an automatic
+  rejection, but on an app handling accounts and payment records it invites the
+  scrutiny you least want.
+- The privacy policy will claim data is protected in transit. It would not be.
+
+The fix is a certificate on the server, not a change in the app. Once
+`https://` works, three edits and the problem is gone for good:
+
+1. `lib/core/config.dart` — change the scheme in `apiBaseUrl`.
+2. `android/app/src/main/res/xml/network_security_config.xml` — delete the
+   `202.51.3.68` line, putting the app back to HTTPS-only.
+3. This file — set the encryption answer back to **Yes**.
+
+A free Let's Encrypt certificate needs a hostname pointed at the box; it cannot
+be issued for a bare IP address. So the real prerequisite is a domain name.
 
 ---
 

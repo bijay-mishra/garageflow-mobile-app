@@ -6,51 +6,55 @@ class AppConfig {
 
   /// Origin of the GarageFlow API, without a trailing slash.
   ///
-  /// The default goes down the USB cable, not over wifi.
+  /// The live server. This is the default rather than an opt-in so that a build
+  /// made without any flags reaches a server that actually exists — the first
+  /// upload to Play went out pointing at `localhost`, which on a tester's
+  /// handset means the handset, so every request failed and the app looked
+  /// broken rather than misconfigured.
   ///
-  /// `localhost` on a phone normally means the phone. It means this machine
-  /// only because of a reverse tunnel set up alongside the build:
+  /// It is plain **HTTP**, and both platforms block cleartext by default:
+  /// Android from API 28, iOS through App Transport Security. The host is
+  /// listed as an exception in
+  /// `android/app/src/main/res/xml/network_security_config.xml` and in
+  /// `ios/Runner/Info.plist`. Point this at a different plain-HTTP server and
+  /// you must add it to both, or requests fail in a way that reads as a dead
+  /// network rather than a policy refusal.
+  ///
+  /// Sign-in credentials and bearer tokens therefore cross the network
+  /// unencrypted. That is workable for testing and is not acceptable for a
+  /// public release — Play's Data safety form asks whether data is encrypted in
+  /// transit, and on this address the honest answer is no. See
+  /// `store/data-safety.md`. Moving to HTTPS is a server change; the only edit
+  /// here is the scheme.
+  ///
+  /// Override at build time. It is a compile-time constant, so changing it is a
+  /// rebuild rather than a setting:
   ///
   /// ```
+  /// # the API running on this machine, down the USB cable
   /// adb reverse tcp:5100 tcp:5100
-  /// ```
+  /// flutter run "-dart-define=API_BASE_URL=http://localhost:5100"
   ///
-  /// That was chosen over a LAN address after two dead ends. `10.0.2.2` is the
-  /// *emulator's* alias for the host and is unroutable from a real handset — it
-  /// does not fail, it hangs until the timeout and then blames the server. And
-  /// the obvious replacement, the machine's own LAN address, does not work here
-  /// either: this PC has a single Ethernet adapter on 192.168.1.x while the
-  /// phone sits on 192.168.137.x, two networks with no route between them.
-  ///
-  /// USB sidesteps all of it. Nothing has to be on the same wifi, no firewall
-  /// rule is involved, and it keeps working when the router hands out different
-  /// addresses tomorrow. The one catch is that the tunnel is per-connection:
-  /// unplug the phone and it is gone, so re-run the adb command after
-  /// replugging. `adb reverse --list` shows whether it is live.
-  ///
-  /// Override at build time for anything else. It is a compile-time constant,
-  /// so changing it is a rebuild rather than a setting:
-  ///
-  /// ```
   /// # Android emulator
   /// flutter run "-dart-define=API_BASE_URL=http://10.0.2.2:5100"
-  ///
-  /// # real phone over wifi, when the PC and phone share a network
-  /// flutter run "-dart-define=API_BASE_URL=http://192.168.1.97:5100"
-  ///
-  /// # a real shop, one day
-  /// flutter build apk "-dart-define=API_BASE_URL=https://api.yourshop.com"
   /// ```
   ///
   /// (Two leading dashes on that flag. Written with one here because a pair
   /// closes a comment in some of the config files that quote this.)
   ///
-  /// The API still has to be listening: use the `phone` launch profile, since
-  /// `http` binds loopback only. The Account screen shows which server the app
-  /// is talking to.
+  /// On the USB route the API has to be listening on the `phone` launch
+  /// profile, since `http` binds loopback only. `10.0.2.2` is the *emulator's*
+  /// alias for the host and is unroutable from a real handset — it does not
+  /// fail, it hangs until the timeout and then blames the server. A LAN address
+  /// is no better here: this PC has a single Ethernet adapter on 192.168.1.x
+  /// while the phone sits on 192.168.137.x, two networks with no route between
+  /// them. The tunnel is per-connection, so re-run `adb reverse` after
+  /// replugging; `adb reverse --list` shows whether it is live.
+  ///
+  /// The Account screen shows which server the app is talking to.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5100',
+    defaultValue: 'http://202.51.3.68:8013',
   );
 
   /// Prefix every endpoint sits under.
