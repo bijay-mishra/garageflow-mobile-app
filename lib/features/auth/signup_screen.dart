@@ -62,14 +62,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    await context.read<AuthController>().signUp(
+    final created = await context.read<AuthController>().signUp(
       name: _name.text,
       email: _email.text,
       phone: _phone.text,
       password: _password.text,
     );
-    // No navigation on success: AuthGate is watching the controller and swaps
-    // in the garage directory as soon as the status changes.
+
+    if (!created || !mounted) return;
+
+    // Back to sign-in, where the controller's notice is already waiting. The
+    // screen underneath is the login screen — this one was pushed from it — so
+    // popping is the whole navigation, and the password they just chose gets
+    // used once immediately, which is the only proof it was typed correctly.
+    Navigator.of(context).pop();
   }
 
   @override

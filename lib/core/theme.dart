@@ -569,6 +569,7 @@ class AppPalette {
     required this.text,
     required this.muted,
     required this.faint,
+    required this.accentWash,
   });
 
   /// Behind everything.
@@ -591,6 +592,17 @@ class AppPalette {
   /// Captions, and anything deliberately quiet.
   final Color faint;
 
+  /// A brand-tinted surface: a selected row, an unread notification, the tile
+  /// behind a brand icon.
+  ///
+  /// This exists because [AppTheme.brandLight] does not have a dark twin. It is
+  /// `brand-50` — a very pale blue — and eight screens were using it as a
+  /// surface colour, which meant a selected service, an unread alert and the
+  /// icon tile on the workshop card all stayed almost-white in dark mode. Any
+  /// tint that has to sit *behind* something belongs here rather than in the
+  /// fixed swatches at the top of this file.
+  final Color accentWash;
+
   static const light = AppPalette(
     background: AppTheme.ink50,
     card: Colors.white,
@@ -599,6 +611,7 @@ class AppPalette {
     text: AppTheme.ink900,
     muted: AppTheme.ink700,
     faint: AppTheme.ink500,
+    accentWash: AppTheme.brandLight,
   );
 
   /// Slate, not black — see the note on [AppTheme.dark].
@@ -610,5 +623,9 @@ class AppPalette {
     text: Color(0xFFF1F5F9),
     muted: Color(0xFFCBD5E1),
     faint: Color(0xFF94A3B8),
+    // The brand hue at low saturation against the dark card, rather than a
+    // lightened blue. Reads as "tinted" at a glance without becoming a bright
+    // panel on a dark screen, which is what a literal dark-mode brand-50 does.
+    accentWash: Color(0xFF1B2A4A),
   );
 }

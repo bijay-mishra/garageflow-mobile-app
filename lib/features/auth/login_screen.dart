@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/config.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../../core/token_storage.dart';
 import '../../state/auth_controller.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
@@ -72,6 +73,42 @@ class _LoginScreenState extends State<LoginScreen> {
   _SignInAs _as = _SignInAs.customer;
   bool _obscure = true;
 
+  /// Whether to keep these credentials on the phone. Off until somebody says
+  /// otherwise, and never defaulted on — storing a password is a decision the
+  /// person signing in gets to make, not one the app makes for them.
+  bool _remember = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRemembered();
+  }
+
+  /// Fills the form in from whatever was saved last time.
+  ///
+  /// Async, so the first frame draws an empty form and this fills it a moment
+  /// later — reading the keychain is a platform channel round trip and blocking
+  /// the first frame on it would show a white screen instead of a login form.
+  Future<void> _restoreRemembered() async {
+    final saved = await context.read<TokenStorage>().readRemembered();
+
+    if (saved == null || !mounted) return;
+
+    setState(() {
+      _remember = true;
+      _email.text = saved.email;
+      _password.text = saved.password;
+
+      // A saved company code means the last sign-in here was a staff one, so
+      // open on the form they will need rather than making them find the staff
+      // door again every time.
+      if (saved.isStaff) {
+        _as = _SignInAs.staff;
+        _company.text = saved.companyCode;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _company.dispose();
@@ -85,15 +122,55 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
-    await context.read<AuthController>().login(
-      // Blank for a customer. The server falls back to a customer-only lookup,
-      // and the garage comes from whichever one their account opens on.
-      companyCode: _as == _SignInAs.staff ? _company.text : '',
-      email: _email.text,
-      password: _password.text,
+    final storage = context.read<TokenStorage>();
+
+    // Blank for a customer. The server falls back to a customer-only lookup,
+    // and the garage comes from whichever one their account opens on.
+    final companyCode = _as == _SignInAs.staff ? _company.text.trim() : '';
+    final email = _email.text.trim();
+    final password = _password.text;
+
+    final signedIn = await context.read<AuthController>().login(
+      companyCode: companyCode,
+      email: email,
+      password: password,
     );
     // No navigation here: AuthGate is watching the controller and swaps the
     // shell in as soon as the status changes.
+
+    if (signedIn) {
+      // Written only once the server has accepted them, so a typo is never
+      // saved and handed back on the next launch as the app's best guess.
+      await (_remember
+          ? storage.saveRemembered(
+              RememberedLogin(
+                companyCode: companyCode,
+                email: email,
+                password: password,
+              ),
+            )
+          : storage.forgetRemembered());
+
+      return;
+    }
+
+    // Rejected. If the password came out of storage it is stale — almost
+    // always because it was changed somewhere else — and leaving it there
+    // would prefill a password that fails every time from now on. The email is
+    // still right, so that stays and only the password goes.
+    if (_remember && password.isNotEmpty) {
+      await storage.saveRemembered(
+        RememberedLogin(companyCode: companyCode, email: email, password: ''),
+      );
+    }
+  }
+
+  /// Ticking keeps the credentials at the next successful sign-in; unticking
+  /// drops whatever is already stored, immediately rather than at the next
+  /// attempt — somebody who unticks it wants the password gone now.
+  Future<void> _setRemember(bool value) async {
+    setState(() => _remember = value);
+    if (!value) await context.read<TokenStorage>().forgetRemembered();
   }
 
   void _switchTo(_SignInAs value) {
@@ -142,11 +219,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 20),
                           ],
 
-                          if (auth.expiryNotice != null) ...[
+                          // Why this screen is here: a session that expired, a
+                          // password just changed, an account just created, an
+                          // account scheduled for deletion. Good news is drawn
+                          // as confirmation rather than as a warning — an amber
+                          // alert over "your account is ready" reads as a fault.
+                          if (auth.notice case final notice?) ...[
                             _Notice(
-                              auth.expiryNotice!,
-                              icon: Icons.info_outline_rounded,
-                              color: AppTheme.amber,
+                              t(notice.key, notice.args),
+                              icon: notice.good
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.info_outline_rounded,
+                              color: notice.good
+                                  ? AppTheme.emerald
+                                  : AppTheme.amber,
                             ),
                             const SizedBox(height: 14),
                           ],
@@ -185,14 +271,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                         decoration: InputDecoration(
                                           labelText: t('auth.companyCode'),
                                           hintText: 'DEMO',
-                                          helperText:
-                                              t('auth.companyCodeHint'),
+                                          helperText: t('auth.companyCodeHint'),
                                           prefixIcon: Icon(
                                             Icons.apartment_rounded,
                                             size: 20,
                                           ),
                                         ),
-                                        validator: (value) => isStaff &&
+                                        validator: (value) =>
+                                            isStaff &&
                                                 (value == null ||
                                                     value.trim().isEmpty)
                                             ? t('auth.enterCompanyCode')
@@ -268,19 +354,61 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : null,
                           ),
 
+                          // Paired with the forgot-password link on one row.
+                          // They are the two things you do *about* the password
+                          // field, and stacking them would push the sign-in
+                          // button below the fold on a short phone.
                           const SizedBox(height: 6),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => ForgotPasswordScreen(
-                                    isStaff: isStaff,
-                                  ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _RememberMe(
+                                  value: _remember,
+                                  onChanged: _setRemember,
                                 ),
                               ),
-                              child: Text(t('auth.forgotPassword')),
-                            ),
+                              TextButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ForgotPasswordScreen(isStaff: isStaff),
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                ),
+                                child: Text(t('auth.forgotPassword')),
+                              ),
+                            ],
+                          ),
+
+                          // Only while it is on: an explanation of what is
+                          // being stored belongs next to the decision to store
+                          // it, not permanently under a box nobody ticked.
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 160),
+                            curve: Curves.easeOut,
+                            alignment: Alignment.topCenter,
+                            child: _remember
+                                ? Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 4,
+                                      top: 2,
+                                      bottom: 4,
+                                    ),
+                                    child: Text(
+                                      t('auth.rememberMeHint'),
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        height: 1.35,
+                                        color: palette.faint,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox(width: double.infinity),
                           ),
 
                           const SizedBox(height: 10),
@@ -360,6 +488,60 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+/// The remember-me tick.
+///
+/// The label is part of the target rather than text beside a small square: a
+/// 20pt checkbox is under the 48pt minimum on its own, and this is a control
+/// people reach for one-handed with a phone in the other hand.
+class _RememberMe extends StatelessWidget {
+  const _RememberMe({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+    final palette = AppTheme.of(context);
+
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: value,
+                onChanged: (checked) => onChanged(checked ?? false),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 9),
+            Flexible(
+              child: Text(
+                t('auth.rememberMe'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: value ? palette.text : palette.faint,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The gradient band with the mark. Same language as every header in the app,
 /// so the first screen already looks like the product.
 class _Hero extends StatelessWidget {
@@ -367,46 +549,45 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
-    width: double.infinity,
-    decoration: const BoxDecoration(
-      gradient: AppTheme.headerGradient,
-      borderRadius: BorderRadius.vertical(
-        bottom: Radius.circular(AppTheme.radiusHeader),
-      ),
-    ),
-    child: SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 30, 24, 30),
-        child: Column(
-          children: [
-            const BrandMark(size: 58, onDark: true),
-            const SizedBox(height: 18),
-            Text(
-              'GarageFlow',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 27,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              AppText.of(context)('auth.tagline'),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: AppTheme.headerGradient,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(AppTheme.radiusHeader),
         ),
       ),
-    ),
-  );
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 30, 24, 30),
+          child: Column(
+            children: [
+              const BrandMark(size: 58, onDark: true),
+              const SizedBox(height: 18),
+              Text(
+                'GarageFlow',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 27,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                AppText.of(context)('auth.tagline'),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -491,7 +672,7 @@ class _StaffHeader extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: AppTheme.brandLight,
+                color: palette.accentWash,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -547,28 +728,27 @@ class _Notice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-      border: Border.all(color: color.withValues(alpha: 0.3)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            message,
-            style: TextStyle(fontSize: 13, color: color, height: 1.35),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(fontSize: 13, color: color, height: 1.35),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
   }
 }
 
@@ -655,46 +835,46 @@ class _CredentialRow extends StatelessWidget {
     final palette = AppTheme.of(context);
 
     return Row(
-    children: [
-      SizedBox(
-        width: 68,
-        child: Text(
-          role,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: palette.muted,
+      children: [
+        SizedBox(
+          width: 68,
+          child: Text(
+            role,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: palette.muted,
+            ),
           ),
         ),
-      ),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              email,
-              style: TextStyle(
-                fontSize: 12,
-                color: palette.faint,
-                fontFamily: 'monospace',
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                email,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: palette.faint,
+                  fontFamily: 'monospace',
+                ),
               ),
-            ),
-            Text(
-              note,
-              style: TextStyle(fontSize: 10.5, color: palette.faint),
-            ),
-          ],
+              Text(
+                note,
+                style: TextStyle(fontSize: 10.5, color: palette.faint),
+              ),
+            ],
+          ),
         ),
-      ),
-      InkWell(
-        onTap: () => Clipboard.setData(ClipboardData(text: email)),
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: EdgeInsets.all(4),
-          child: Icon(Icons.copy_rounded, size: 14, color: palette.faint),
+        InkWell(
+          onTap: () => Clipboard.setData(ClipboardData(text: email)),
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: EdgeInsets.all(4),
+            child: Icon(Icons.copy_rounded, size: 14, color: palette.faint),
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
   }
 }

@@ -258,7 +258,7 @@ class _Option extends StatelessWidget {
       child: Material(
         color: selected && enabled
             ? AppTheme.brand.withValues(alpha: 0.06)
-            : Colors.white,
+            : AppTheme.of(context).card,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         child: InkWell(
           onTap: enabled ? onTap : null,

@@ -7,8 +7,10 @@ import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/invoice.dart';
 import '../../services/billing_service.dart';
+import '../../widgets/alerts_action.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
+import 'bill_detail_screen.dart';
 import 'pay_sheet.dart';
 
 /// The customer's bills, and paying them.
@@ -42,7 +44,10 @@ class _BillsScreenState extends State<BillsScreen> {
 
       // Together: the workshop record carries which wallets are live, and a Pay
       // button that appears before that is known could offer one that is not.
-      final results = await Future.wait([billing.invoices(), billing.workshop()]);
+      final results = await Future.wait([
+        billing.invoices(),
+        billing.workshop(),
+      ]);
 
       if (!mounted) return;
       setState(() {
@@ -82,6 +87,23 @@ class _BillsScreenState extends State<BillsScreen> {
     }
   }
 
+  /// Opens the bill itself.
+  ///
+  /// The workshop goes with it rather than being fetched again: the detail
+  /// screen needs it for the letterhead, and this screen loaded it a moment ago
+  /// to decide which Pay buttons to draw.
+  Future<void> _open(Invoice invoice) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            BillDetailScreen(invoiceId: invoice.id, workshop: _workshop),
+      ),
+    );
+
+    // It may have been paid from in there.
+    if (mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppText.of(context);
@@ -89,15 +111,19 @@ class _BillsScreenState extends State<BillsScreen> {
     final palette = AppTheme.of(context);
 
     // Unpaid first, then by date. Within each group the newest is on top.
-    final sorted = [..._invoices]..sort((a, b) {
-      if (a.isPaid != b.isPaid) return a.isPaid ? 1 : -1;
-      return b.issuedAt.compareTo(a.issuedAt);
-    });
+    final sorted = [..._invoices]
+      ..sort((a, b) {
+        if (a.isPaid != b.isPaid) return a.isPaid ? 1 : -1;
+        return b.issuedAt.compareTo(a.issuedAt);
+      });
 
     final due = _invoices.fold(0.0, (sum, i) => sum + i.due);
 
     return Scaffold(
-      appBar: GradientAppBar(title: t('bills.title')),
+      appBar: GradientAppBar(
+        title: t('bills.title'),
+        actions: const [AlertsAction(), SizedBox(width: 6)],
+      ),
       body: _loading
           ? const LoadingView()
           : _error != null
@@ -125,6 +151,7 @@ class _BillsScreenState extends State<BillsScreen> {
                       child: _InvoiceCard(
                         invoice: invoice,
                         onPay: () => _pay(invoice),
+                        onOpen: () => _open(invoice),
                       ),
                     ),
                   ),
@@ -142,45 +169,53 @@ class _DueBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
-    margin: const EdgeInsets.only(bottom: 14),
-    padding: const EdgeInsets.all(15),
-    decoration: BoxDecoration(
-      color: AppTheme.brand,
-      borderRadius: BorderRadius.circular(AppTheme.radius),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            'Outstanding',
-            style: TextStyle(
-              fontSize: 13.5,
-              color: Colors.white70,
-              fontWeight: FontWeight.w600,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: AppTheme.brand,
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Outstanding',
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Colors.white70,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-        Text(
-          Fmt.rs(amount),
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
+          Text(
+            Fmt.rs(amount),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
   }
 }
 
 class _InvoiceCard extends StatelessWidget {
-  const _InvoiceCard({required this.invoice, required this.onPay});
+  const _InvoiceCard({
+    required this.invoice,
+    required this.onPay,
+    required this.onOpen,
+  });
 
   final Invoice invoice;
   final VoidCallback onPay;
+
+  /// Opens the bill itself. The whole card is the target, because a list that
+  /// shows only a total and a status answers "how much" and nothing else — and
+  /// "what am I being charged for" is the question a bill exists to answer.
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -194,13 +229,9 @@ class _InvoiceCard extends StatelessWidget {
         ? AppTheme.amber
         : AppTheme.rose;
 
-    return Container(
+    return AppCard(
+      onTap: onOpen,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: palette.border),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -221,10 +252,7 @@ class _InvoiceCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${invoice.vehiclePlate} · ${Fmt.date(invoice.issuedAt)}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: palette.faint,
-                      ),
+                      style: TextStyle(fontSize: 12.5, color: palette.faint),
                     ),
                   ],
                 ),
@@ -273,9 +301,7 @@ class _InvoiceCard extends StatelessWidget {
             const SizedBox(height: 14),
             FilledButton(
               onPressed: onPay,
-              style: FilledButton.styleFrom(
-                minimumSize: Size.fromHeight(46),
-              ),
+              style: FilledButton.styleFrom(minimumSize: Size.fromHeight(46)),
               child: Text(t('pay.payAmount', [Fmt.rs(invoice.due)])),
             ),
           ] else if (invoice.method != null) ...[
@@ -290,14 +316,33 @@ class _InvoiceCard extends StatelessWidget {
                 const SizedBox(width: 7),
                 Text(
                   t('pay.paidBy', [invoice.method]),
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: palette.faint,
-                  ),
+                  style: TextStyle(fontSize: 12.5, color: palette.faint),
                 ),
               ],
             ),
           ],
+
+          // Spelled out as well as being the card's own tap target. A card that
+          // is tappable and does not say so is a card most people never tap.
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                t('bills.viewBill'),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.brand,
+                ),
+              ),
+              const SizedBox(width: 3),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 17,
+                color: AppTheme.brand,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -314,6 +359,7 @@ class _Figure extends StatelessWidget {
 
   final String label;
   final String value;
+
   /// Null takes the palette's default text colour.
   final Color? color;
   final bool alignEnd;
@@ -323,24 +369,21 @@ class _Figure extends StatelessWidget {
     final palette = AppTheme.of(context);
 
     return Column(
-    crossAxisAlignment: alignEnd
-        ? CrossAxisAlignment.end
-        : CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(fontSize: 11, color: palette.faint),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        value,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: color ?? palette.text,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 11, color: palette.faint)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: color ?? palette.text,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
   }
 }

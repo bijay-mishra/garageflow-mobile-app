@@ -203,7 +203,7 @@ class _StatusOption extends StatelessWidget {
     final color = AppTheme.statusColor(status);
 
     return Material(
-      color: selected ? color.withValues(alpha: 0.09) : Colors.white,
+      color: selected ? color.withValues(alpha: 0.09) : palette.card,
       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
       child: InkWell(
         onTap: onTap,

@@ -84,6 +84,7 @@ const Map<String, String> _en = {
   // Common
   'common.retry': 'Try again',
   'common.cancel': 'Cancel',
+  'common.more': 'More',
   'common.save': 'Save',
   'common.saving': 'Saving…',
   'common.close': 'Close',
@@ -122,6 +123,9 @@ const Map<String, String> _en = {
   'auth.hidePassword': 'Hide password',
   'auth.or': 'or',
   'auth.orWithEmail': 'or continue with email',
+  'auth.sessionExpired': 'Your session has expired. Please sign in again.',
+  'auth.passwordChangedNotice':
+      'Your password was changed. Please sign in again.',
 
   // ── Chat with the garage ────────────────────────────────────────────────
   'support.title': 'Help',
@@ -154,6 +158,10 @@ const Map<String, String> _en = {
   'auth.backToCustomer': 'Back to customer sign-in',
   'auth.continueWithGoogle': 'Continue with Google',
   'auth.forgotPassword': 'Forgot password?',
+  'auth.rememberMe': 'Remember me',
+  'auth.rememberMeHint':
+      'Your email and password stay on this phone, in its encrypted store, so '
+          'this form opens filled in. Untick to remove them.',
   'forgot.title': 'Reset password',
   'forgot.intro': 'Tell us the email on your account and we will send a six-digit code.',
   'forgot.send': 'Send code',
@@ -197,6 +205,39 @@ const Map<String, String> _en = {
   'signup.footnote':
       'Free for customers. You choose which garages you use, and you can use '
           'more than one.',
+  'signup.created': 'Your account is ready. Sign in to get started.',
+
+  // Closing an account. Customers only — a mechanic's login belongs to the
+  // workshop that issued it.
+  'deleteAccount.title': 'Delete account',
+  'deleteAccount.rowSub': 'Close your GarageFlow account for good',
+  'deleteAccount.graceTitle': 'You have 30 days to change your mind',
+  'deleteAccount.graceBody':
+      'Nothing is deleted today. Your account is removed for good 30 days from '
+          'now. Sign in again before then and it stays, exactly as it is.',
+  'deleteAccount.whatGoes': 'What is deleted',
+  'deleteAccount.goesLogin': 'Your login, name, email, phone and photo',
+  'deleteAccount.goesGarages': 'Your membership of every garage you joined',
+  'deleteAccount.goesMessages': 'Your notifications and support messages',
+  'deleteAccount.whatStays': 'What the garage keeps',
+  'deleteAccount.staysInvoices':
+      'Past job cards and invoices, with your name removed',
+  'deleteAccount.staysWhy':
+      'A garage has to keep its own sales records for tax. Yours stay in its '
+          'books with nothing on them that says who you were.',
+  'deleteAccount.confirmPassword':
+      'Type your password to confirm this is you.',
+  'deleteAccount.action': 'Delete my account',
+  'deleteAccount.keep': 'Keep my account',
+  'deleteAccount.confirmTitle': 'Delete your account?',
+  'deleteAccount.confirmBody':
+      'You will be signed out now, and your account is deleted in 30 days. '
+          'Signing in again before then cancels it.',
+  'deleteAccount.confirmAction': 'Delete',
+  'deleteAccount.scheduled':
+      'Your account will be deleted on {0}. Sign in before then and it stays.',
+  'deleteAccount.cancelled':
+      'Welcome back. Your account is no longer being deleted.',
 
   // Garage directory
   'garages.choose': 'Choose a garage',
@@ -228,6 +269,51 @@ const Map<String, String> _en = {
   'garages.finding': 'Finding garages…',
   'garages.noAddress': 'Address not published',
   'garages.sortNearest': 'Sort by nearest',
+  'garages.noneJoined': 'You have not joined a garage yet',
+
+  // Rewards, points and offers
+  'rewards.title': 'Rewards',
+  'rewards.rowSub': 'Your stamps, points and this garage\'s offers',
+  'rewards.rowWorth': 'Worth {0} off your next bill',
+  'rewards.rowToGo': '{0} more service(s) fills your card',
+  'rewards.rowFree': '{0} free service waiting for you',
+  'rewards.pillPoints': '{0} pts',
+  'rewards.loading': 'Loading your rewards…',
+  'rewards.noneTitle': 'No rewards scheme here',
+  'rewards.noneMessage':
+      'This garage does not run a loyalty scheme or any offers at the moment.',
+  'rewards.freeService': 'A free service',
+  'rewards.running': 'ON RIGHT NOW',
+  'rewards.history': 'YOUR ACTIVITY',
+  'rewards.readyOne': 'Ready to use — ask for your free {0}',
+  'rewards.readyMany': '{0} free services waiting for you',
+  'rewards.oneToGo': 'One more service and your {0} is free',
+  'rewards.manyToGo': '{0} more services and your {1} is free',
+  'rewards.askAtCounter':
+      'Mention it when you collect the vehicle and the garage takes it off the bill.',
+  'rewards.points': 'Points',
+  'rewards.worth': 'worth {0}',
+  'rewards.canSpend': 'You can put these towards your next bill.',
+  'rewards.needMore': '{0} more points to start spending — {1} needed.',
+  'rewards.until': 'Until {0}',
+
+  // Rating a finished job
+  'rate.title': 'How did we do?',
+  'rate.subtitle': 'Your rating is shown to the workshop, never to other customers.',
+  'rate.garage': 'The garage overall',
+  'rate.mechanic': '{0}\'s work',
+  'rate.comment': 'Anything to add?',
+  'rate.commentHint': 'Optional',
+  'rate.submit': 'Send rating',
+  'rate.update': 'Update rating',
+  'rate.thanks': 'Thank you for the feedback.',
+  'rate.prompt': 'Rate this service',
+  'rate.promptSub': 'Two quick questions — the garage, and the mechanic.',
+  'rate.yours': 'Your rating',
+  'rate.tapToChange': 'Tap to change',
+  'rate.myRating': 'My rating',
+  'rate.fromCount': 'From {0} customer rating(s)',
+  'rate.notRatedYet': 'No ratings yet',
 
   // Mechanic
   'jobs.greeting': 'Hi, {0}',
@@ -459,6 +545,16 @@ const Map<String, String> _en = {
       'The workshop confirms the details when you first bring the vehicle in.',
   'vehicle.addSubmit': 'Add vehicle',
   'vehicle.added': '{0} added to your account.',
+  'vehicle.editTitle': 'Edit vehicle',
+  'vehicle.edit': 'Edit details',
+  'vehicle.updated': '{0} updated.',
+  'vehicle.remove': 'Remove',
+  'vehicle.removeTitle': 'Remove {0}?',
+  'vehicle.removeBody':
+      'This takes the vehicle off your account. If the garage has already '
+          'serviced it, they keep that record and you will be asked to contact '
+          'them instead.',
+  'vehicle.removed': '{0} removed from your account.',
 
   // Values, not labels — see `vehicleTypes` and `fuelTypes`. Translated here
   // for display only; the English value is what goes to the API.
@@ -605,6 +701,46 @@ const Map<String, String> _en = {
   'pay.payAmount': 'Pay {0}',
   'pay.paidBy': 'Paid by {0}',
   'bills.none': 'No bills yet.',
+  'bills.viewBill': 'View bill',
+
+  // ── One bill, in full ──────────────────────────────────────────────────────
+  'bill.title': 'Bill',
+  'bill.loading': 'Loading the bill…',
+  'bill.taxInvoice': 'TAX INVOICE',
+  'bill.pan': 'PAN',
+  'bill.billedTo': 'Billed to',
+  'bill.issued': 'Issued',
+  'bill.vehicle': 'Vehicle',
+  'bill.odometer': 'Odometer',
+  'bill.jobRef': 'Job',
+  'bill.workRequested': 'Work requested',
+  'bill.mechanic': 'Mechanic',
+  'bill.completed': 'Completed',
+  'bill.description': 'Description',
+  'bill.qty': 'Qty',
+  'bill.rate': 'Rate',
+  'bill.amount': 'Amount',
+  'bill.subtotal': 'Subtotal',
+  'bill.discount': 'Discount',
+  'bill.pointsRedeemed': '{0} points redeemed',
+  'bill.taxable': 'Taxable',
+  'bill.vat': 'VAT {0}%',
+  'bill.total': 'Total',
+  'bill.paidLabel': 'Paid',
+  'bill.dueLabel': 'Still to pay',
+  'bill.payments': 'Payments received',
+  'bill.noBreakdown':
+      'The itemised breakdown is no longer on file. The totals are the record.',
+  'bill.kind.labour': 'Labour',
+  'bill.kind.part': 'Part',
+  'bill.kind.service': 'Service',
+  'bill.thanks': 'Thank you for your custom.',
+  'bill.generated': 'Saved from the GarageFlow app on {0}.',
+  'bill.saveImage': 'Save as image',
+  'bill.savePdf': 'Save as PDF',
+  'bill.preparing': 'Preparing…',
+  'bill.saveFailed': 'Could not prepare the file. Please try again.',
+  'bill.shareSubject': 'Bill {0} — {1}',
 
   // ── History ────────────────────────────────────────────────────────────────
   'history.loading': 'Loading your history…',
@@ -650,6 +786,86 @@ const Map<String, String> _en = {
 
   // ── Alerts ─────────────────────────────────────────────────────────────────
   'alerts.emptyMessage': 'Updates about your jobs and bookings will appear here.',
+
+  // ── Plans ──────────────────────────────────────────────────────────────────
+  // The pitch, shown once on the way in. Deliberately about what the app does
+  // for the person rather than about the feature names.
+  'plansPitch.title': 'GarageFlow, without the waiting',
+  'plansPitch.subtitle':
+      'A few things a paid plan adds. Have a look — the free app carries on '
+          'working exactly as it does now.',
+  'plansPitch.noAds.title': 'No adverts',
+  'plansPitch.noAds.body': 'Nothing between you and your vehicle.',
+  'plansPitch.instant.title': 'Instant alerts',
+  'plansPitch.instant.body':
+      'Your phone buzzes the moment the workshop moves your job, instead of '
+          'the next time you open the app.',
+  'plansPitch.parts.title': 'Parts-change reminders',
+  'plansPitch.parts.body':
+      'A word before the brake pads or the oil are due, not after.',
+  'plansPitch.history.title': 'Your whole history',
+  'plansPitch.history.body':
+      'Every service and every bill, however far back it goes, kept and '
+          'searchable.',
+  'plansPitch.explore': 'Explore plans',
+  'plansPitch.notNow': 'Not now',
+
+  'plans.title': 'Plans',
+  'plans.rowSub': 'See what a paid plan adds',
+  'plans.subtitle': 'Pay for as long as you like',
+  'plans.popular': 'BEST VALUE',
+  'plans.freePrice': 'Free',
+  'plans.yourPlan': 'Your plan',
+  'plans.worksOutAt': 'Works out at {0} a month',
+  'plans.payWith': 'Pay with {0}',
+  'plans.thanks': 'Thank you. Your plan is active.',
+  'plans.activeUntil': 'Your plan runs until {0}',
+  'plans.endingSoon': 'Your plan ends in {0} day(s). Renew to keep it running.',
+  'plans.comingSoon': 'Coming soon',
+  'plans.freeFallback':
+      'What your account goes back to whenever a paid plan ends.',
+  'plans.noWalletShort': 'Online payment not set up',
+  'plans.noWallet':
+      'This garage\'s server has no online wallet configured yet, so plans '
+          'cannot be paid for from the app.',
+  'plans.footnote':
+      'Prices are in Nepali rupees and include tax. A plan covers your '
+          'account, not a single vehicle, and renewing early adds to the time '
+          'you already have.',
+  'plans.noneTitle': 'No plans on offer',
+  'plans.noneMessage': 'Everything in the app is free at the moment.',
+
+  // How long one payment covers. Derived from the number of months the server
+  // sends, so the figure and the word for it cannot disagree.
+  'period.monthly': '/ month',
+  'period.quarterly': '/ 3 months',
+  'period.yearly': '/ year',
+  'period.months': '/ {0} months',
+
+  // Per-tier wording. Keyed by the code the server sends, so a price can change
+  // without an app release and the words can be translated without a server
+  // deploy. `features` is one `|`-separated string — see Plan.features.
+  'plan.free.name': 'Free',
+  'plan.free.tagline': 'Everything the app does today',
+  'plan.free.features':
+      'Book services and follow the work|Your bills, and paying them|'
+          'Rewards and offers from your garage|Save any bill as a PDF',
+  'plan.monthly.name': 'Monthly',
+  'plan.monthly.tagline': 'Try it for a month',
+  'plan.monthly.features':
+      'No adverts, anywhere|Instant alerts the moment a job moves|'
+          'Parts-change reminders before something is due|'
+          'Your full service history, however far back',
+  'plan.quarterly.name': 'Quarterly',
+  'plan.quarterly.tagline': 'Three months, at half the monthly rate',
+  'plan.quarterly.features':
+      'Everything in the monthly plan|Three months for the price of one and a '
+          'half|Every vehicle you own on one account',
+  'plan.yearly.name': 'Yearly',
+  'plan.yearly.tagline': 'The whole year, and the cheapest way to buy it',
+  'plan.yearly.features':
+      'Everything in the quarterly plan|A full year of cover|'
+          'Priority booking at your garage|Bills exported for your accountant',
 };
 
 // ── Nepali ───────────────────────────────────────────────────────────────────
@@ -664,6 +880,7 @@ const Map<String, String> _en = {
 const Map<String, String> _ne = {
   'common.retry': 'फेरि प्रयास गर्नुहोस्',
   'common.cancel': 'रद्द गर्नुहोस्',
+  'common.more': 'थप',
   'common.save': 'सेभ गर्नुहोस्',
   'common.saving': 'सेभ हुँदै…',
   'common.close': 'बन्द गर्नुहोस्',
@@ -701,6 +918,9 @@ const Map<String, String> _ne = {
   'auth.hidePassword': 'पासवर्ड लुकाउनुहोस्',
   'auth.or': 'वा',
   'auth.orWithEmail': 'वा इमेलबाट जारी राख्नुहोस्',
+  'auth.sessionExpired': 'तपाईंको सेसन सकियो। फेरि साइन इन गर्नुहोस्।',
+  'auth.passwordChangedNotice':
+      'तपाईंको पासवर्ड परिवर्तन भयो। फेरि साइन इन गर्नुहोस्।',
 
   'support.title': 'सहयोग',
   'support.subtitle': 'सवारी वा बिलबारे सोध्नुहोस्',
@@ -727,6 +947,10 @@ const Map<String, String> _ne = {
   'auth.backToCustomer': 'ग्राहक साइन इनमा फर्कनुहोस्',
   'auth.continueWithGoogle': 'Google बाट जारी राख्नुहोस्',
   'auth.forgotPassword': 'पासवर्ड बिर्सनुभयो?',
+  'auth.rememberMe': 'मलाई सम्झनुहोस्',
+  'auth.rememberMeHint':
+      'तपाईंको इमेल र पासवर्ड यही फोनको इन्क्रिप्टेड स्टोरमा रहन्छ, ताकि यो '
+          'फारम भरिएकै अवस्थामा खुल्छ। हटाउन टिक निकाल्नुहोस्।',
   'forgot.title': 'पासवर्ड रिसेट',
   'forgot.intro': 'आफ्नो खाताको इमेल लेख्नुहोस्, हामी छ अंकको कोड पठाउँछौं।',
   'forgot.send': 'कोड पठाउनुहोस्',
@@ -770,6 +994,37 @@ const Map<String, String> _ne = {
   'signup.footnote':
       'ग्राहकका लागि निःशुल्क। कुन ग्यारेज प्रयोग गर्ने तपाईं छान्नुहुन्छ, र '
           'एकभन्दा बढी पनि प्रयोग गर्न सक्नुहुन्छ।',
+  'signup.created': 'तपाईंको खाता तयार भयो। सुरु गर्न साइन इन गर्नुहोस्।',
+
+  'deleteAccount.title': 'खाता मेट्नुहोस्',
+  'deleteAccount.rowSub': 'आफ्नो GarageFlow खाता सधैंका लागि बन्द गर्नुहोस्',
+  'deleteAccount.graceTitle': 'विचार बदल्न ३० दिन छ',
+  'deleteAccount.graceBody':
+      'आज केही पनि मेटिँदैन। अबका ३० दिनपछि तपाईंको खाता सधैंका लागि हट्नेछ। '
+          'त्यसअघि फेरि साइन इन गर्नुभयो भने खाता जस्ताको तस्तै रहन्छ।',
+  'deleteAccount.whatGoes': 'के मेटिन्छ',
+  'deleteAccount.goesLogin': 'तपाईंको लगइन, नाम, इमेल, फोन र फोटो',
+  'deleteAccount.goesGarages': 'तपाईं सामेल भएका सबै ग्यारेजको सदस्यता',
+  'deleteAccount.goesMessages': 'तपाईंका सूचना र सहयोग सन्देशहरू',
+  'deleteAccount.whatStays': 'ग्यारेजसँग के रहन्छ',
+  'deleteAccount.staysInvoices':
+      'पुराना जब कार्ड र बिलहरू, तपाईंको नाम हटाएर',
+  'deleteAccount.staysWhy':
+      'करका लागि ग्यारेजले आफ्नो बिक्रीको हिसाब राख्नैपर्छ। ती हिसाबमा '
+          'तपाईं को हुनुहुन्थ्यो भन्ने कुनै विवरण रहँदैन।',
+  'deleteAccount.confirmPassword':
+      'यो तपाईं नै हो भनी पुष्टि गर्न पासवर्ड लेख्नुहोस्।',
+  'deleteAccount.action': 'मेरो खाता मेट्नुहोस्',
+  'deleteAccount.keep': 'खाता राख्नुहोस्',
+  'deleteAccount.confirmTitle': 'खाता मेट्ने हो?',
+  'deleteAccount.confirmBody':
+      'तपाईं अहिले नै साइन आउट हुनुहुनेछ, र ३० दिनपछि खाता मेटिनेछ। '
+          'त्यसअघि फेरि साइन इन गर्नुभयो भने यो रद्द हुन्छ।',
+  'deleteAccount.confirmAction': 'मेट्नुहोस्',
+  'deleteAccount.scheduled':
+      'तपाईंको खाता {0} मा मेटिनेछ। त्यसअघि साइन इन गर्नुभयो भने खाता रहन्छ।',
+  'deleteAccount.cancelled':
+      'फेरि स्वागत छ। तपाईंको खाता अब मेटिँदैन।',
 
   'garages.choose': 'ग्यारेज छान्नुहोस्',
   'garages.find': 'ग्यारेज खोज्नुहोस्',
@@ -797,6 +1052,50 @@ const Map<String, String> _ne = {
   'garages.finding': 'ग्यारेज खोज्दै…',
   'garages.noAddress': 'ठेगाना राखिएको छैन',
   'garages.sortNearest': 'नजिकको अनुसार',
+  'garages.noneJoined': 'तपाईं अझै कुनै ग्यारेजमा सामेल हुनुभएको छैन',
+
+  'rewards.title': 'पुरस्कार',
+  'rewards.rowSub': 'तपाईंका स्ट्याम्प, पोइन्ट र यो ग्यारेजका अफर',
+  'rewards.rowWorth': 'अर्को बिलमा {0} छुट हुने',
+  'rewards.rowToGo': 'कार्ड भर्न अझै {0} सर्भिस',
+  'rewards.rowFree': '{0} निःशुल्क सर्भिस पर्खिरहेको',
+  'rewards.pillPoints': '{0} अंक',
+  'rewards.loading': 'पुरस्कार लोड हुँदैछ…',
+  'rewards.noneTitle': 'यहाँ पुरस्कार योजना छैन',
+  'rewards.noneMessage':
+      'यो ग्यारेजले अहिले कुनै पुरस्कार योजना वा अफर चलाएको छैन।',
+  'rewards.freeService': 'एउटा निःशुल्क सेवा',
+  'rewards.running': 'अहिले चलिरहेको',
+  'rewards.history': 'तपाईंको गतिविधि',
+  'rewards.readyOne': 'प्रयोग गर्न तयार — निःशुल्क {0} माग्नुहोस्',
+  'rewards.readyMany': '{0} निःशुल्क सेवा तपाईंको पर्खाइमा',
+  'rewards.oneToGo': 'अझै एक सेवा, अनि तपाईंको {0} निःशुल्क',
+  'rewards.manyToGo': 'अझै {0} सेवा, अनि तपाईंको {1} निःशुल्क',
+  'rewards.askAtCounter':
+      'सवारी लिन आउँदा भन्नुहोस्, ग्यारेजले बिलबाट घटाइदिन्छ।',
+  'rewards.points': 'पोइन्ट',
+  'rewards.worth': 'मूल्य {0}',
+  'rewards.canSpend': 'यी पोइन्ट अर्को बिलमा प्रयोग गर्न सक्नुहुन्छ।',
+  'rewards.needMore': 'खर्च गर्न अझै {0} पोइन्ट चाहिन्छ — जम्मा {1} चाहिन्छ।',
+  'rewards.until': '{0} सम्म',
+
+  'rate.title': 'हाम्रो काम कस्तो लाग्यो?',
+  'rate.subtitle':
+      'तपाईंको मूल्याङ्कन ग्यारेजले मात्र देख्छ, अरू ग्राहकले देख्दैनन्।',
+  'rate.garage': 'ग्यारेज समग्रमा',
+  'rate.mechanic': '{0} को काम',
+  'rate.comment': 'केही थप्नु छ?',
+  'rate.commentHint': 'वैकल्पिक',
+  'rate.submit': 'पठाउनुहोस्',
+  'rate.update': 'अद्यावधिक गर्नुहोस्',
+  'rate.thanks': 'प्रतिक्रियाका लागि धन्यवाद।',
+  'rate.prompt': 'यो सेवाको मूल्याङ्कन गर्नुहोस्',
+  'rate.promptSub': 'दुई छोटा प्रश्न — ग्यारेज, र मेकानिक।',
+  'rate.yours': 'तपाईंको मूल्याङ्कन',
+  'rate.tapToChange': 'बदल्न थिच्नुहोस्',
+  'rate.myRating': 'मेरो मूल्याङ्कन',
+  'rate.fromCount': '{0} ग्राहक मूल्याङ्कनबाट',
+  'rate.notRatedYet': 'अहिलेसम्म मूल्याङ्कन छैन',
 
   'jobs.greeting': 'नमस्ते, {0}',
   'jobs.active': 'चालु कामहरू',
@@ -1015,6 +1314,16 @@ const Map<String, String> _ne = {
       'पहिलो पटक सवारी ल्याउँदा वर्कशपले विवरण पक्का गर्नेछ।',
   'vehicle.addSubmit': 'सवारी थप्नुहोस्',
   'vehicle.added': '{0} तपाईंको खातामा थपियो।',
+  'vehicle.editTitle': 'सवारी सम्पादन',
+  'vehicle.edit': 'विवरण सम्पादन',
+  'vehicle.updated': '{0} अद्यावधिक भयो।',
+  'vehicle.remove': 'हटाउनुहोस्',
+  'vehicle.removeTitle': '{0} हटाउने हो?',
+  'vehicle.removeBody':
+      'यसले सवारीलाई तपाईंको खाताबाट हटाउँछ। ग्यारेजले पहिले नै सर्भिस '
+          'गरिसकेको छ भने त्यो रेकर्ड उनीहरूसँगै रहन्छ र तपाईंलाई उनीहरूलाई '
+          'सम्पर्क गर्न भनिनेछ।',
+  'vehicle.removed': '{0} तपाईंको खाताबाट हट्यो।',
 
   'vehicleType.Bike': 'मोटरसाइकल',
   'vehicleType.Car': 'कार',
@@ -1149,6 +1458,45 @@ const Map<String, String> _ne = {
   'pay.payAmount': '{0} तिर्नुहोस्',
   'pay.paidBy': '{0} बाट तिरियो',
   'bills.none': 'अझै बिल छैन।',
+  'bills.viewBill': 'बिल हेर्नुहोस्',
+
+  'bill.title': 'बिल',
+  'bill.loading': 'बिल लोड हुँदै…',
+  'bill.taxInvoice': 'कर बीजक',
+  'bill.pan': 'स्थायी लेखा नम्बर',
+  'bill.billedTo': 'बिल पाउने',
+  'bill.issued': 'जारी मिति',
+  'bill.vehicle': 'सवारी',
+  'bill.odometer': 'ओडोमिटर',
+  'bill.jobRef': 'जब',
+  'bill.workRequested': 'भनिएको काम',
+  'bill.mechanic': 'मेकानिक',
+  'bill.completed': 'सकिएको',
+  'bill.description': 'विवरण',
+  'bill.qty': 'परिमाण',
+  'bill.rate': 'दर',
+  'bill.amount': 'रकम',
+  'bill.subtotal': 'जम्मा',
+  'bill.discount': 'छुट',
+  'bill.pointsRedeemed': '{0} अंक सट्टा गरियो',
+  'bill.taxable': 'कर लाग्ने रकम',
+  'bill.vat': 'भ्याट {0}%',
+  'bill.total': 'कुल',
+  'bill.paidLabel': 'तिरिएको',
+  'bill.dueLabel': 'तिर्न बाँकी',
+  'bill.payments': 'प्राप्त भुक्तानी',
+  'bill.noBreakdown':
+      'कामको विस्तृत विवरण अब फाइलमा छैन। तलको जोडफल नै अभिलेख हो।',
+  'bill.kind.labour': 'ज्याला',
+  'bill.kind.part': 'पार्ट्स',
+  'bill.kind.service': 'सर्भिस',
+  'bill.thanks': 'तपाईंलाई धन्यवाद।',
+  'bill.generated': 'GarageFlow एपबाट {0} मा सेभ गरिएको।',
+  'bill.saveImage': 'फोटोका रूपमा सेभ गर्नुहोस्',
+  'bill.savePdf': 'PDF मा सेभ गर्नुहोस्',
+  'bill.preparing': 'तयार हुँदै…',
+  'bill.saveFailed': 'फाइल तयार गर्न सकिएन। फेरि प्रयास गर्नुहोस्।',
+  'bill.shareSubject': 'बिल {0} — {1}',
 
   'history.loading': 'तपाईंको इतिहास लोड हुँदै…',
   'history.emptyTitle': 'अझै सकिएको सर्भिस छैन',
@@ -1187,4 +1535,72 @@ const Map<String, String> _ne = {
   'jobs.tryClearing': 'फिल्टर हटाएर हेर्नुहोस्।',
 
   'alerts.emptyMessage': 'तपाईंका काम र बुकिङका अपडेट यहाँ देखिनेछन्।',
+
+  'plansPitch.title': 'GarageFlow, पर्खनु नपर्ने गरी',
+  'plansPitch.subtitle':
+      'सशुल्क प्लानले थप्ने केही कुरा। हेर्नुहोस् — निःशुल्क एप अहिलेकै जस्तै '
+          'चलिरहन्छ।',
+  'plansPitch.noAds.title': 'विज्ञापन छैन',
+  'plansPitch.noAds.body': 'तपाईं र तपाईंको सवारीबीच केही आउँदैन।',
+  'plansPitch.instant.title': 'तुरुन्तै सूचना',
+  'plansPitch.instant.body':
+      'वर्कशपले काम अघि बढाउनासाथ फोन बज्छ — एप खोल्दा मात्र होइन।',
+  'plansPitch.parts.title': 'पार्ट्स फेर्ने सम्झना',
+  'plansPitch.parts.body':
+      'ब्रेक प्याड वा मोबिल फेर्ने समय आउनुअघि नै खबर, पछि होइन।',
+  'plansPitch.history.title': 'सम्पूर्ण इतिहास',
+  'plansPitch.history.body':
+      'जति पुरानो भए पनि हरेक सर्भिस र हरेक बिल सुरक्षित र खोज्न मिल्ने।',
+  'plansPitch.explore': 'प्लानहरू हेर्नुहोस्',
+  'plansPitch.notNow': 'अहिले होइन',
+
+  'plans.title': 'प्लानहरू',
+  'plans.rowSub': 'सशुल्क प्लानले के थप्छ हेर्नुहोस्',
+  'plans.subtitle': 'जति अवधिको चाहनुहुन्छ, त्यति तिर्नुहोस्',
+  'plans.popular': 'सबैभन्दा फाइदाजनक',
+  'plans.freePrice': 'निःशुल्क',
+  'plans.yourPlan': 'तपाईंको प्लान',
+  'plans.worksOutAt': 'महिनाको {0} पर्ने',
+  'plans.payWith': '{0} बाट तिर्नुहोस्',
+  'plans.thanks': 'धन्यवाद। तपाईंको प्लान सक्रिय भयो।',
+  'plans.activeUntil': 'तपाईंको प्लान {0} सम्म चल्छ',
+  'plans.endingSoon':
+      'तपाईंको प्लान {0} दिनमा सकिन्छ। जारी राख्न नवीकरण गर्नुहोस्।',
+  'plans.comingSoon': 'चाँडै आउँदै',
+  'plans.freeFallback':
+      'सशुल्क प्लान सकिएपछि तपाईंको खाता यसैमा फर्कन्छ।',
+  'plans.noWalletShort': 'अनलाइन भुक्तानी मिलाइएको छैन',
+  'plans.noWallet':
+      'सर्भरमा अनलाइन वालेट मिलाइएको छैन, त्यसैले एपबाट प्लान किन्न मिल्दैन।',
+  'plans.footnote':
+      'मूल्य नेपाली रुपैयाँमा हो र करसहित हो। प्लान तपाईंको खातामा लागू हुन्छ, '
+          'एउटा सवारीमा होइन, र समय बाँकी छँदै नवीकरण गर्दा बाँकी दिन जोडिन्छ।',
+  'plans.noneTitle': 'कुनै प्लान छैन',
+  'plans.noneMessage': 'अहिले एपका सबै कुरा निःशुल्क छन्।',
+
+  'period.monthly': '/ महिना',
+  'period.quarterly': '/ ३ महिना',
+  'period.yearly': '/ वर्ष',
+  'period.months': '/ {0} महिना',
+
+  'plan.free.name': 'निःशुल्क',
+  'plan.free.tagline': 'एपले अहिले गर्ने सबै कुरा',
+  'plan.free.features':
+      'सर्भिस बुक गरी काम हेर्ने|तपाईंका बिल र भुक्तानी|'
+          'गाराजका इनाम र अफर|जुनसुकै बिल PDF मा सेभ गर्ने',
+  'plan.monthly.name': 'मासिक',
+  'plan.monthly.tagline': 'एक महिना चलाएर हेर्नुहोस्',
+  'plan.monthly.features':
+      'कतै पनि विज्ञापन छैन|काम अघि बढ्नासाथ तुरुन्तै सूचना|'
+          'पार्ट्स फेर्ने समय आउनुअघि सम्झना|जति पुरानो भए पनि पूरा सर्भिस इतिहास',
+  'plan.quarterly.name': 'त्रैमासिक',
+  'plan.quarterly.tagline': 'तीन महिना, मासिकको आधा दरमा',
+  'plan.quarterly.features':
+      'मासिक प्लानका सबै कुरा|डेढ महिनाको पैसामा तीन महिना|'
+          'एउटै खातामा तपाईंका सबै सवारी',
+  'plan.yearly.name': 'वार्षिक',
+  'plan.yearly.tagline': 'पूरा वर्ष, र सबैभन्दा सस्तो तरिका',
+  'plan.yearly.features':
+      'त्रैमासिक प्लानका सबै कुरा|पूरा एक वर्षको सुविधा|'
+          'गाराजमा प्राथमिकतासहित बुकिङ|लेखापालका लागि बिल निर्यात',
 };

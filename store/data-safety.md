@@ -9,24 +9,45 @@ two is one of the most common causes of rejection.
 
 ---
 
-## Blocker: account deletion does not exist yet
+## Account deletion — built, in-app
 
-The app has a sign-up screen, so Google requires a way to delete the account —
-**both** in-app and at a publicly reachable URL that works without installing
-the app.
+Google requires an app with a sign-up screen to offer account deletion. The
+in-app half is done:
 
-There is currently no delete-account route in the app and no endpoint in the
-API. `AuthController` has `HttpDelete("photo")` and nothing else.
+**Account → Delete account**, customer accounts only. The screen states what is
+removed and what the workshop keeps, asks for the password, and confirms in a
+dialog before anything happens. `POST /api/auth/delete-account` records the
+request, revokes every session, and the account is erased for good 30 days
+later by `AccountPurgeService` — a daily sweep, not a promise. Signing in
+during those 30 days cancels it, which is the only way to cancel it and the
+reason the endpoint ends the session rather than leaving the app signed in.
 
-Until that is built, the honest answer to "Do you provide a way for users to
-request that their data is deleted?" is **No**, and that answer on its own can
-fail review for an app with accounts.
+Mechanics do not get the option, and the endpoint refuses them with a 403. A
+mechanic's login was issued by the workshop that employs them and is that
+workshop's to withdraw, on the dashboard.
 
-Deleting a customer is not a simple `DELETE`. Their job cards and invoices are
-another tenant's business records, and a workshop has tax reasons to keep them.
-The usual resolution is to delete the login and the personal fields, and keep
-the invoice as an anonymised record. Worth deciding deliberately rather than
-discovering at review.
+Deleting a customer was never a simple `DELETE`, and the split is deliberate —
+see `AccountDeletion` in the API for the whole of it:
+
+| Removed outright | Kept, anonymised |
+|---|---|
+| The login, password hash, name, email, phone, photo | The customer row each garage holds |
+| Every refresh token and notification | Past job cards and invoices pointing at it |
+| Support conversations they opened | |
+| Membership of every garage joined | |
+
+The customer row survives with its name, phone, email, address and map pin
+cleared. A workshop's invoices are its own business records and it has tax
+reasons to keep them; what the product can promise is that they stop naming
+anybody.
+
+### Still missing: the public deletion URL
+
+Google asks for **two** routes, and only one exists. The second is a web page,
+reachable without installing the app, where somebody can request deletion —
+typically a form on the marketing site that reaches the same endpoint. There is
+no such page yet, so the answer below is a qualified yes and the reviewer may
+still ask for it. This is the remaining piece of the requirement.
 
 ---
 
@@ -35,8 +56,8 @@ discovering at review.
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | **Yes** |
-| Is all of the user data collected by your app encrypted in transit? | **Not as the app is built today.** See the second blocker below. |
-| Do you provide a way for users to request that their data is deleted? | **Not yet** — see the blocker above. |
+| Is all of the user data collected by your app encrypted in transit? | **Not as the app is built today.** See the blocker below. |
+| Do you provide a way for users to request that their data is deleted? | **Yes, in-app.** The public web URL is still outstanding — see above. |
 
 ---
 

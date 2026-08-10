@@ -3,7 +3,7 @@ description: >-
   GarageFlow for phones. One app, two audiences: mechanics work the jobs
   assigned to them, customers book services and follow their vehicle.
 publish_to: "none"
-version: 1.0.0+6
+version: 1.0.0+8
 
 environment:
   sdk: ^3.12.2
@@ -33,6 +33,18 @@ dependencies:
 
   # Dates and Rs formatting, so the app agrees with the dashboard.
   intl: ^0.20.2
+
+  # Raises a real notification on the phone — the tray entry and the heads-up
+  # banner — rather than only moving the bell badge inside the app.
+  #
+  # Not Firebase. This displays notifications the app has already fetched for
+  # itself, so it needs no google-services.json, no Google account and no
+  # server key, and it works against the API exactly as it stands. What it
+  # cannot do is wake a killed app: Android will not start a process for a
+  # timer that is no longer running. That half needs FCM — and when FCM
+  # arrives, this same package is what displays its foreground messages and
+  # this same channel is the one it posts to, so none of it is thrown away.
+  flutter_local_notifications: ^18.0.1
 
   # Maps. OpenStreetMap tiles through flutter_map — the same source the
   # dashboard uses via Leaflet, so a pin looks the same on both. No API key, no
@@ -68,6 +80,19 @@ dependencies:
   # are real conversion tables rather than the "add 56 years" approximation.
   nepali_utils: ^3.0.8
   google_sign_in: ^7.2.0
+
+  # Saving a bill. The customer's copy of an invoice has to be able to leave the
+  # app — to an insurer, an employer's expenses desk, or just a folder — and a
+  # screenshot of a screen that scrolls is not a document.
+  #
+  # `pdf` writes the file, with the page built from the same bill the screen has
+  # already drawn. That is deliberate: one bill layout in the app rather than a
+  # Flutter one and a near-identical PDF one that drift apart. `path_provider`
+  # gives somewhere to write it and `share_plus` opens the system sheet, which
+  # is also the route to Files or Photos on both platforms.
+  pdf: ^3.12.0
+  path_provider: ^2.1.6
+  share_plus: ^12.0.2
 
 dev_dependencies:
   flutter_test:

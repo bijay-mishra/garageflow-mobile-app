@@ -141,9 +141,12 @@ class _NotificationTile extends StatelessWidget {
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       child: Material(
-        // Unread rows carry a faint blue wash. It is the only difference
+        // Unread rows carry a faint brand wash. It is the only difference
         // between read and unread, and it survives a glance better than a dot.
-        color: notification.isRead ? Colors.white : AppTheme.brandLight,
+        // Both sides come from the palette: hardcoded here, the read rows
+        // stayed white and the unread ones stayed pale blue in dark mode, which
+        // is the whole list drawn in the wrong theme.
+        color: notification.isRead ? palette.card : palette.accentWash,
         child: InkWell(
           onTap: onTap,
           child: Padding(

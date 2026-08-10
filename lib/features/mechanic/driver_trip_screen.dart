@@ -617,7 +617,7 @@ class _CompleteBar extends StatelessWidget {
     return Container(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppTheme.of(context).card,
       boxShadow: AppTheme.shadowLifted,
     ),
     child: SafeArea(

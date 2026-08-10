@@ -98,15 +98,24 @@ class AuthResult {
     required this.accessToken,
     required this.refreshToken,
     required this.user,
+    this.deletionCancelled = false,
   });
 
   final String accessToken;
   final String refreshToken;
   final AuthUser user;
 
+  /// True when this sign-in called off a deletion the account had asked for.
+  ///
+  /// Signing in is the only thing that cancels one, which means it happens
+  /// without anybody pressing a button that says so. The app tells them rather
+  /// than letting an account quietly stop being deleted.
+  final bool deletionCancelled;
+
   factory AuthResult.fromJson(Map<String, dynamic> json) => AuthResult(
     accessToken: json['accessToken'] as String,
     refreshToken: json['refreshToken'] as String,
     user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
+    deletionCancelled: json['deletionCancelled'] as bool? ?? false,
   );
 }

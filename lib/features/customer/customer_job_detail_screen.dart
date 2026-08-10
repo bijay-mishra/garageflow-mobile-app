@@ -6,12 +6,15 @@ import '../../core/formatters.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
+import '../../models/loyalty.dart';
 import '../../services/customer_service.dart';
+import '../../services/loyalty_service.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/status_chip.dart';
 import '../shared/photo_viewer.dart';
+import 'rate_job_sheet.dart';
 
 /// One job, from the customer's side: how far along, what it will cost, and
 /// what the workshop has photographed.
@@ -30,6 +33,9 @@ class _CustomerJobDetailScreenState extends State<CustomerJobDetailScreen> {
   String? _error;
   CustomerJob? _job;
 
+  /// Their existing stars on this job, when they have left any.
+  JobRating? _rating;
+
   @override
   void initState() {
     super.initState();
@@ -46,12 +52,28 @@ class _CustomerJobDetailScreenState extends State<CustomerJobDetailScreen> {
         _job = job;
         _loading = false;
       });
+
+      // After the job, and only for finished work — there is nothing to have
+      // rated otherwise. Separate from the job load so a rating endpoint that
+      // fails cannot stop the screen drawing the job.
+      if (job.isFinished) await _loadRating();
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
         _error = error.message;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadRating() async {
+    try {
+      final rating = await context.read<LoyaltyService>().ratingFor(widget.jobId);
+      if (!mounted) return;
+      setState(() => _rating = rating);
+    } on ApiException {
+      // Not worth an error state. The card falls back to "rate this service",
+      // and rating again edits rather than duplicates.
     }
   }
 
@@ -79,6 +101,18 @@ class _CustomerJobDetailScreenState extends State<CustomerJobDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
                   _ProgressCard(job: job),
+
+                  // Only once the work is done, and only ever one tap away.
+                  // Asking mid-job would be asking someone to score a guess.
+                  if (job.isFinished) ...[
+                    const SizedBox(height: 14),
+                    _RateCard(
+                      job: job,
+                      rating: _rating,
+                      onRated: (rating) => setState(() => _rating = rating),
+                    ),
+                  ],
+
                   const SizedBox(height: 14),
                   SectionCard(
                     title: t('job.lookingAt'),
@@ -354,5 +388,100 @@ class _PhotoStrip extends StatelessWidget {
       ),
     ),
   );
+  }
+}
+
+/// "How did we do?" on a finished job, and the stars once they answer.
+///
+/// Two states in one card rather than a prompt that disappears: a customer who
+/// rated 2 stars in annoyance and later wants to change it needs to be able to
+/// find the thing they tapped. Rating again edits the first one server-side.
+class _RateCard extends StatelessWidget {
+  const _RateCard({
+    required this.job,
+    required this.rating,
+    required this.onRated,
+  });
+
+  final CustomerJob job;
+  final JobRating? rating;
+  final ValueChanged<JobRating> onRated;
+
+  Future<void> _open(BuildContext context) async {
+    final saved = await RateJobSheet.show(
+      context,
+      jobId: job.id,
+      mechanic: job.mechanic,
+      existing: rating,
+    );
+
+    if (saved == null || !context.mounted) return;
+
+    onRated(saved);
+    showSnack(context, AppText.of(context)('rate.thanks'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppText.of(context);
+    final palette = AppTheme.of(context);
+    final given = rating;
+
+    return AppCard(
+      accent: given == null ? AppTheme.amber : null,
+      child: InkWell(
+        onTap: () => _open(context),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    given == null ? t('rate.prompt') : t('rate.yours'),
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: palette.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (given == null)
+                    Text(
+                      t('rate.promptSub'),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: palette.faint,
+                        height: 1.35,
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        for (var star = 1; star <= 5; star++)
+                          Icon(
+                            star <= given.stars
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            size: 17,
+                            color: star <= given.stars
+                                ? AppTheme.amber
+                                : palette.border,
+                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          t('rate.tapToChange'),
+                          style: TextStyle(fontSize: 11.5, color: palette.faint),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: palette.faint),
+          ],
+        ),
+      ),
+    );
   }
 }

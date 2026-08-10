@@ -56,6 +56,53 @@ class CustomerService {
     return Vehicle.fromJson(data);
   }
 
+  /// Corrects one of the customer's own vehicles.
+  ///
+  /// The whole record goes up, not a patch: the form shows every field already
+  /// filled in, so anything missing from the body would be a field the customer
+  /// could see on screen and could not change.
+  ///
+  /// The plate may be edited — cars really are re-registered, and past bills
+  /// keep their own snapshot of it. A plate already used at this garage comes
+  /// back as an [ApiException] with the server's own wording.
+  Future<Vehicle> updateVehicle({
+    required String id,
+    required String plate,
+    required String make,
+    required String model,
+    required int year,
+    String type = 'Car',
+    String fuel = 'Petrol',
+    int odometer = 0,
+    String color = '',
+  }) async {
+    final data = await _api.put<Map<String, dynamic>>(
+      '/customer/vehicles/$id',
+      body: {
+        'plate': plate.trim(),
+        'make': make.trim(),
+        'model': model.trim(),
+        'year': year,
+        'type': type,
+        'fuel': fuel,
+        'odometer': odometer,
+        'color': color.trim(),
+      },
+    );
+
+    return Vehicle.fromJson(data);
+  }
+
+  /// Removes a vehicle from the customer's account.
+  ///
+  /// Only works on a car the workshop has no record against — one added by
+  /// mistake, or sold before it was ever booked in. Anything with a service
+  /// history or a booking is refused by the server, which names what is
+  /// blocking it; that message is worth showing verbatim, because the answer is
+  /// "ask the workshop" rather than "try again".
+  Future<void> deleteVehicle(String id) =>
+      _api.delete<dynamic>('/customer/vehicles/$id');
+
   /// Work on the customer's vehicles. [active] limits it to what is in the
   /// workshop now — the "track status" screen.
   Future<List<CustomerJob>> jobs({bool active = true, String? vehicleId}) async {

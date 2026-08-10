@@ -22,8 +22,16 @@ import '../../widgets/states.dart';
 /// Asks for the six things a workshop needs to recognise a vehicle on the
 /// forecourt and no more. VIN, service history and the exact trim are the
 /// workshop's to record when the car actually arrives.
+///
+/// Doubles as the edit screen. Pass [vehicle] and the same form opens filled
+/// in and saves with a PUT instead — one form rather than two, because a second
+/// copy of these fields, this validation and this vocabulary mapping is how the
+/// two drift until one accepts a year the other refuses.
 class AddVehicleScreen extends StatefulWidget {
-  const AddVehicleScreen({super.key});
+  const AddVehicleScreen({super.key, this.vehicle});
+
+  /// The vehicle being corrected, or null when adding a new one.
+  final Vehicle? vehicle;
 
   @override
   State<AddVehicleScreen> createState() => _AddVehicleScreenState();
@@ -31,16 +39,24 @@ class AddVehicleScreen extends StatefulWidget {
 
 class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _plate = TextEditingController();
-  final _make = TextEditingController();
-  final _model = TextEditingController();
-  final _year = TextEditingController();
-  final _colour = TextEditingController();
-  final _odometer = TextEditingController();
+  late final _plate = TextEditingController(text: widget.vehicle?.plate ?? '');
+  late final _make = TextEditingController(text: widget.vehicle?.make ?? '');
+  late final _model = TextEditingController(text: widget.vehicle?.model ?? '');
+  late final _year = TextEditingController(
+    text: widget.vehicle == null ? '' : '${widget.vehicle!.year}',
+  );
+  late final _colour = TextEditingController(text: widget.vehicle?.color ?? '');
+  // Zero means "not given" on the way in, so it shows as an empty box rather
+  // than as a reading of 0 km the customer then has to clear.
+  late final _odometer = TextEditingController(
+    text: (widget.vehicle?.odometer ?? 0) == 0 ? '' : '${widget.vehicle!.odometer}',
+  );
 
-  String _type = 'Car';
-  String _fuel = 'Petrol';
+  late String _type = widget.vehicle?.type ?? 'Car';
+  late String _fuel = widget.vehicle?.fuel ?? 'Petrol';
   bool _saving = false;
+
+  bool get _isEdit => widget.vehicle != null;
 
   @override
   void dispose() {
@@ -59,20 +75,37 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
 
     setState(() => _saving = true);
 
+    final service = context.read<CustomerService>();
+
     try {
-      final vehicle = await context.read<CustomerService>().addVehicle(
-        plate: _plate.text,
-        make: _make.text,
-        model: _model.text,
-        year: int.parse(_year.text.trim()),
-        type: _type,
-        fuel: _fuel,
-        // Empty means "not given", which the server stores as zero rather than
-        // guessing. Asking someone to walk to their car to read the dashboard
-        // before they can add it is how a form gets abandoned.
-        odometer: int.tryParse(_odometer.text.trim()) ?? 0,
-        color: _colour.text,
-      );
+      // Empty odometer means "not given", which the server stores as zero
+      // rather than guessing. Asking someone to walk to their car and read the
+      // dashboard before they can save is how a form gets abandoned.
+      final odometer = int.tryParse(_odometer.text.trim()) ?? 0;
+      final year = int.parse(_year.text.trim());
+
+      final vehicle = _isEdit
+          ? await service.updateVehicle(
+              id: widget.vehicle!.id,
+              plate: _plate.text,
+              make: _make.text,
+              model: _model.text,
+              year: year,
+              type: _type,
+              fuel: _fuel,
+              odometer: odometer,
+              color: _colour.text,
+            )
+          : await service.addVehicle(
+              plate: _plate.text,
+              make: _make.text,
+              model: _model.text,
+              year: year,
+              type: _type,
+              fuel: _fuel,
+              odometer: odometer,
+              color: _colour.text,
+            );
 
       if (mounted) Navigator.pop(context, vehicle);
     } on ApiException catch (error) {
@@ -95,7 +128,9 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final maxYear = DateTime.now().year + 1;
 
     return Scaffold(
-      appBar: GradientAppBar(title: t('vehicle.addTitle')),
+      appBar: GradientAppBar(
+        title: _isEdit ? t('vehicle.editTitle') : t('vehicle.addTitle'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -242,7 +277,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             Container(
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
-                color: AppTheme.brandLight,
+                color: palette.accentWash,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               ),
               child: Row(
@@ -288,7 +323,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       valueColor: AlwaysStoppedAnimation(Colors.white),
                     ),
                   )
-                : Text(t('vehicle.addSubmit')),
+                : Text(_isEdit ? t('common.save') : t('vehicle.addSubmit')),
           ),
         ),
       ),

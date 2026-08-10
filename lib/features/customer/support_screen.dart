@@ -260,7 +260,7 @@ class _SupportScreenState extends State<SupportScreen> {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(AppTheme.radius),
               border: Border.all(color: palette.border),
             ),
@@ -399,7 +399,7 @@ class _SupportScreenState extends State<SupportScreen> {
         10 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         border: Border(top: BorderSide(color: palette.border)),
       ),
       child: Row(
@@ -456,7 +456,7 @@ class _Intro extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: AppTheme.brandLight,
+              color: palette.accentWash,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -569,7 +569,7 @@ class _Bubble extends StatelessWidget {
                   ? AppTheme.brand
                   : message.fromBot
                   ? palette.field
-                  : Colors.white,
+                  : palette.card,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),

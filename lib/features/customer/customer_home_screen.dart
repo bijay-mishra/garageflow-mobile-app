@@ -12,6 +12,7 @@ import '../../models/vehicle.dart';
 import '../../services/customer_service.dart';
 import '../../services/delivery_service.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/alerts_action.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
@@ -104,6 +105,64 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     if (mounted) showSnack(context, t('vehicle.added', [vehicle.plate]));
 
     return true;
+  }
+
+  /// Opens the same form filled in, and reloads when something changed.
+  Future<void> _editVehicle(Vehicle vehicle) async {
+    final t = AppText.of(context);
+
+    final saved = await Navigator.of(context).push<Vehicle>(
+      MaterialPageRoute(builder: (_) => AddVehicleScreen(vehicle: vehicle)),
+    );
+
+    if (saved == null || !mounted) return;
+
+    await _load();
+    if (mounted) showSnack(context, t('vehicle.updated', [saved.plate]));
+  }
+
+  /// Removes a vehicle, once.
+  ///
+  /// The server refuses anything the workshop has a record against and says
+  /// why — a car that has been serviced is on somebody's books, and taking it
+  /// off the customer's account would take their job history with it. That
+  /// refusal is shown verbatim rather than paraphrased, because it names the
+  /// number of services and tells them to ask the workshop.
+  Future<void> _deleteVehicle(Vehicle vehicle) async {
+    final t = AppText.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t('vehicle.removeTitle', [vehicle.plate])),
+        content: Text(t('vehicle.removeBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(t('common.cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.rose),
+            child: Text(t('vehicle.remove')),
+          ),
+        ],
+      ),
+    );
+
+    // Dismissing the dialog returns null, which counts as no.
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await context.read<CustomerService>().deleteVehicle(vehicle.id);
+
+      if (!mounted) return;
+      await _load();
+      if (mounted) showSnack(context, t('vehicle.removed', [vehicle.plate]));
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showSnack(context, error.message, isError: true);
+    }
   }
 
   Future<void> _book() async {
@@ -245,6 +304,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     MaterialPageRoute(builder: (_) => const SupportScreen()),
                   ),
                 ),
+                // Last, so the bell is the rightmost thing on the screen —
+                // where a phone user reaches for it without looking.
+                const AlertsAction(),
               ],
               // The headline card. A handover awaiting an answer outranks
               // everything; otherwise the car being worked on; otherwise a
@@ -383,7 +445,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           for (final vehicle in _vehicles)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _VehicleCard(vehicle: vehicle),
+              child: _VehicleCard(
+                vehicle: vehicle,
+                onEdit: () => _editVehicle(vehicle),
+                onDelete: () => _deleteVehicle(vehicle),
+              ),
             ),
       ],
     );
@@ -806,9 +872,15 @@ class _BookingCard extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle});
+  const _VehicleCard({
+    required this.vehicle,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final Vehicle vehicle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -873,6 +945,44 @@ class _VehicleCard extends StatelessWidget {
           ),
         ),
         MetaChip(vehicle.type),
+
+        // A menu rather than two buttons on every row: the list is read far
+        // more often than it is edited, and a delete icon sitting permanently
+        // beside a car is an invitation nobody asked for.
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert_rounded, size: 20, color: palette.faint),
+          tooltip: t('common.more'),
+          onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit_outlined, size: 18, color: palette.muted),
+                  const SizedBox(width: 10),
+                  Text(t('vehicle.edit')),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppTheme.rose,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    t('vehicle.remove'),
+                    style: const TextStyle(color: AppTheme.rose),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     ),
   );

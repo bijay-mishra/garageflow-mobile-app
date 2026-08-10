@@ -191,7 +191,10 @@ class MechanicSummary {
 
 /// A job as the customer app sees it — `GET /api/customer/jobs`.
 ///
-/// Carries the money and the photos, never the mechanic's name.
+/// Carries the money, the photos and the name of whoever worked on it. That
+/// last one is new: the customer rates the mechanic as well as the shop, and
+/// they cannot be asked to score somebody the app never named. Nothing else
+/// about the mechanic crosses over.
 class CustomerJob {
   const CustomerJob({
     required this.id,
@@ -207,6 +210,7 @@ class CustomerJob {
     required this.lines,
     required this.photos,
     required this.progressPct,
+    this.mechanic = '',
   });
 
   final String id;
@@ -215,6 +219,11 @@ class CustomerJob {
   final String vehicleLabel;
   final String complaint;
   final String status;
+
+  /// Who worked on it. Blank when nobody was assigned, which is why the rating
+  /// sheet asks about the mechanic only when this is set.
+  final String mechanic;
+
   final DateTime createdAt;
   final DateTime promisedAt;
   final DateTime? completedAt;
@@ -235,6 +244,7 @@ class CustomerJob {
     vehicleLabel: json['vehicleLabel'] as String? ?? '',
     complaint: json['complaint'] as String? ?? '',
     status: json['status'] as String? ?? 'Open',
+    mechanic: json['mechanic'] as String? ?? '',
     createdAt: DateTime.parse(json['createdAt'] as String),
     promisedAt: DateTime.parse(json['promisedAt'] as String),
     completedAt: json['completedAt'] == null

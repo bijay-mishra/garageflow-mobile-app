@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
-import '../../state/notification_controller.dart';
-import '../mechanic/mechanic_shell.dart' show NotificationBadge;
-import '../notifications/notifications_screen.dart';
+import '../plans/explore_plans_sheet.dart';
 import '../profile/profile_screen.dart';
 import 'bills_screen.dart';
 import 'customer_home_screen.dart';
@@ -13,7 +10,11 @@ import 'garage_directory_screen.dart';
 import 'service_history_screen.dart';
 
 /// The customer's app: what is happening now, what has happened before, the
-/// feed, and their account.
+/// bills, the garages and their account.
+///
+/// Alerts are not a destination here. The feed lives behind the bell in each
+/// screen's header — see [AlertsAction] — which took the bar from six slots to
+/// five and gave the labels room to be read.
 class CustomerShell extends StatefulWidget {
   const CustomerShell({super.key});
 
@@ -32,9 +33,32 @@ class _CustomerShellState extends State<CustomerShell> {
     // joined. It was reachable only from inside the account screen, which
     // made finding a new garage something you had to already know how to do.
     GarageDirectoryScreen(),
-    NotificationsScreen(),
     ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame: the shell is what somebody sees when they sign in,
+    // and a sheet raised during its build would have nothing behind it.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _offerPlans());
+  }
+
+  /// Shows the plans pitch on the way in.
+  ///
+  /// Every time the app opens, not once per install. It used to keep a "seen"
+  /// flag; that was the wrong call to make on the seller's behalf, and in
+  /// practice meant almost nobody ever saw it. The dialog itself is what makes
+  /// this bearable — it closes on the X, on Not now, on a tap outside and on
+  /// the back gesture, so it costs one tap to dismiss.
+  ///
+  /// Not on every rebuild: this runs from `initState`, so it fires when the
+  /// shell is created — a cold start or a sign-in — and not when somebody
+  /// switches tabs or comes back from the background.
+  Future<void> _offerPlans() async {
+    if (!mounted) return;
+    await showExplorePlansDialog(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,15 +66,13 @@ class _CustomerShellState extends State<CustomerShell> {
 
     final palette = AppTheme.of(context);
 
-    final unread = context.watch<NotificationController>().unreadCount;
-
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: palette.border)),
         ),
-        // Six labels divide a phone into ~60pt slots, and the app's own text
+        // Five labels divide a phone into ~72pt slots, and the app's own text
         // size setting is applied at the root as a hard scale — so at Large
         // the labels grew past their slot and the outer two were clipped by
         // the screen edge. Capped here rather than at the root because this
@@ -58,7 +80,7 @@ class _CustomerShellState extends State<CustomerShell> {
         // of destinations: everything else can reflow or scroll, a tab bar
         // cannot. Only the ceiling is lowered, so Small still shrinks.
         child: MediaQuery.withClampedTextScaling(
-          maxScaleFactor: 1.1,
+          maxScaleFactor: 1.2,
           child: BottomNavigationBar(
             currentIndex: _index,
             onTap: (index) => setState(() => _index = index),
@@ -66,10 +88,10 @@ class _CustomerShellState extends State<CustomerShell> {
             // default is `shifting`, which hides the label of every tab except
             // the selected one. Six unlabelled icons is a guessing game.
             type: BottomNavigationBarType.fixed,
-            // Six labels on a phone are tight. Smaller rather than truncated —
-            // "Garages" clipped to "Gara…" helps nobody.
-            selectedFontSize: 11,
-            unselectedFontSize: 11,
+            // Small rather than truncated — "Garages" clipped to "Gara…" helps
+            // nobody. With the alerts tab gone there is room for 11.5.
+            selectedFontSize: 11.5,
+            unselectedFontSize: 11.5,
             items: [
               BottomNavigationBarItem(
                 icon: Icon(Icons.directions_car_outlined),
@@ -90,17 +112,6 @@ class _CustomerShellState extends State<CustomerShell> {
                 icon: Icon(Icons.storefront_outlined),
                 activeIcon: Icon(Icons.storefront_rounded),
                 label: t('tab.garages'),
-              ),
-              BottomNavigationBarItem(
-                icon: NotificationBadge(
-                  count: unread,
-                  child: const Icon(Icons.notifications_outlined),
-                ),
-                activeIcon: NotificationBadge(
-                  count: unread,
-                  child: const Icon(Icons.notifications_rounded),
-                ),
-                label: t('tab.alerts'),
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline_rounded),

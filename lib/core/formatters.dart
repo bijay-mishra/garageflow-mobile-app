@@ -140,6 +140,13 @@ class Fmt {
 
   static String number(num value) => _digits(_number.format(value));
 
+  /// A quantity on a bill: 2, or 1.5 hours of labour.
+  ///
+  /// Separate from [number], which rounds to whole units. Labour is billed in
+  /// hours and a half-hour rounded to one is a customer being charged for time
+  /// nobody spent — or the workshop losing it.
+  static String qty(num value) => _digits(_decimal.format(value));
+
   static String km(num value) => '${_digits(_number.format(value))} km';
 
   // The BS month names that used to live here went with the named-month

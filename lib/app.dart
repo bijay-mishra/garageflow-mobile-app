@@ -6,10 +6,11 @@ import 'core/i18n.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
+import 'features/customer/choose_garage_shell.dart';
 import 'features/customer/customer_shell.dart';
-import 'features/customer/garage_directory_screen.dart';
 import 'features/mechanic/mechanic_shell.dart';
 import 'features/profile/lock_gate.dart';
+import 'widgets/states.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
 import 'state/settings_controller.dart';
@@ -77,9 +78,34 @@ class AuthGate extends StatelessWidget {
       // The lock wraps only the signed-in shells. Locking the login screen
       // would leave anyone whose fingerprint stopped working with no way in.
       AuthStatus.signedIn => LockGate(
-        child: _startPolling(notifications, _shellFor(auth)),
+        child: _announceDeletionCancelled(
+          context,
+          auth,
+          _startPolling(notifications, _shellFor(auth)),
+        ),
       ),
     };
+  }
+
+  /// Says so when this sign-in called off a pending account deletion.
+  ///
+  /// It happens as a side effect of signing in — nobody pressed a button that
+  /// said "keep my account" — so somebody who meant to leave has to be told
+  /// they no longer are. Shown once: [AuthController.consumeDeletionCancelled]
+  /// clears the flag, so it does not reappear on every rebuild.
+  Widget _announceDeletionCancelled(
+    BuildContext context,
+    AuthController auth,
+    Widget child,
+  ) {
+    if (!auth.deletionCancelled) return child;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted || !auth.consumeDeletionCancelled()) return;
+      showSnack(context, AppText.of(context)('deleteAccount.cancelled'));
+    });
+
+    return child;
   }
 
   /// Which app a signed-in person gets.
@@ -87,13 +113,13 @@ class AuthGate extends StatelessWidget {
   /// The third case is the marketplace one: a customer whose account belongs to
   /// no garage yet. Everything in the customer shell is scoped to one workshop,
   /// so showing it would mean five tabs of empty states and no explanation. The
-  /// directory *is* their home until they join somewhere.
+  /// directory *is* their home until they join somewhere — but with an account
+  /// tab beside it, so signing out does not require joining a business first.
+  /// See [ChooseGarageShell].
   Widget _shellFor(AuthController auth) {
     if (auth.user!.isMechanic) return const MechanicShell();
 
-    if (auth.needsGarage) {
-      return const GarageDirectoryScreen(mustChoose: true);
-    }
+    if (auth.needsGarage) return const ChooseGarageShell();
 
     return const CustomerShell();
   }

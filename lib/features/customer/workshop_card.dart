@@ -73,7 +73,7 @@ class _WorkshopCardState extends State<WorkshopCard> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(AppTheme.radius),
         border: Border.all(color: palette.border),
       ),
@@ -90,7 +90,7 @@ class _WorkshopCardState extends State<WorkshopCard> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: AppTheme.brandLight,
+                  color: palette.accentWash,
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: const Icon(

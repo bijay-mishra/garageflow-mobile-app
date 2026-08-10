@@ -8,11 +8,32 @@ import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
 import '../core/api_exception.dart';
+import '../core/formatters.dart';
 import '../core/token_storage.dart';
 import '../models/auth_user.dart';
 import '../services/auth_service.dart';
 import '../services/directory_service.dart';
 import '../services/google_sign_in_service.dart';
+
+/// A line the login screen shows above the form, and why.
+///
+/// A translation key rather than a finished sentence, because the controller
+/// has no [BuildContext] and therefore no language — the screen looks it up.
+/// That is not a detail: these were plain English strings, which meant the one
+/// message a Nepali user saw in English was the one explaining why they had
+/// been signed out.
+class AuthNotice {
+  const AuthNotice(this.key, {this.args = const [], this.good = false});
+
+  final String key;
+  final List<Object?> args;
+
+  /// True for news that is not a problem — an account created, a deletion
+  /// scheduled exactly as asked. Decides whether the panel is drawn as a
+  /// warning or as a confirmation; an amber alert over "your account is ready"
+  /// reads as something having gone wrong.
+  final bool good;
+}
 
 /// Where the session lives.
 enum AuthStatus {
@@ -56,10 +77,27 @@ class AuthController extends ChangeNotifier {
   String? get error => _error;
   bool get busy => _busy;
 
-  /// Set when a session ended on its own rather than by the user signing out,
-  /// so the login screen can explain why they are looking at it again.
-  String? _expiryNotice;
-  String? get expiryNotice => _expiryNotice;
+  /// Why the login screen is on screen, when it is there for a reason.
+  ///
+  /// Four things produce one: a session that expired, a password change that
+  /// ended the session, an account just created, and an account just scheduled
+  /// for deletion. All four answer the same question from the user's side —
+  /// "why am I looking at this again?" — so they share one channel rather than
+  /// four flags the screen has to prioritise between.
+  AuthNotice? _notice;
+  AuthNotice? get notice => _notice;
+
+  /// Set once when a sign-in called off a pending deletion, and read by the
+  /// shell to say so. Cleared by [consumeDeletionCancelled] so it announces
+  /// itself on that sign-in and never again.
+  bool _deletionCancelled = false;
+  bool get deletionCancelled => _deletionCancelled;
+
+  bool consumeDeletionCancelled() {
+    if (!_deletionCancelled) return false;
+    _deletionCancelled = false;
+    return true;
+  }
 
   /// Restores a stored session on launch.
   ///
@@ -89,7 +127,7 @@ class AuthController extends ChangeNotifier {
       // someone out — a mechanic in a workshop basement should still see the
       // jobs they loaded earlier.
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await _clear('Your session has expired. Please sign in again.');
+        await _clear(const AuthNotice('auth.sessionExpired'));
       }
     }
   }
@@ -101,7 +139,7 @@ class AuthController extends ChangeNotifier {
   }) async {
     _busy = true;
     _error = null;
-    _expiryNotice = null;
+    _notice = null;
     notifyListeners();
 
     try {
@@ -128,6 +166,7 @@ class AuthController extends ChangeNotifier {
 
       _user = result.user;
       _busy = false;
+      _deletionCancelled = result.deletionCancelled;
       _set(AuthStatus.signedIn);
       return true;
     } on ApiException catch (error) {
@@ -138,11 +177,19 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// Creates a customer account and signs straight into it.
+  /// Creates a customer account, and leaves them on the sign-in screen.
   ///
-  /// No company code, and no garage. The account belongs above any single
-  /// workshop, so a new customer lands on the directory rather than inside
-  /// somebody's books — see [needsGarage].
+  /// The tokens the server hands back are deliberately thrown away. Signing
+  /// somebody straight in is one tap fewer, but it also means the only
+  /// confirmation that an account now exists is the app changing shape — and
+  /// the password they just chose is never used, so nothing tells them whether
+  /// they typed the one they meant. Signing in with it is the confirmation.
+  ///
+  /// No company code, and no garage: the account belongs above any single
+  /// workshop and joins one from the directory afterwards — see [needsGarage].
+  ///
+  /// Returns true when the account was created; [notice] then carries the
+  /// sentence the login screen shows.
   Future<bool> signUp({
     required String name,
     required String email,
@@ -151,23 +198,19 @@ class AuthController extends ChangeNotifier {
   }) async {
     _busy = true;
     _error = null;
-    _expiryNotice = null;
+    _notice = null;
     notifyListeners();
 
     try {
-      final result = await _directory.signUp(
+      await _directory.signUp(
         name: name,
         email: email,
         phone: phone,
         password: password,
       );
 
-      await _storage.saveTokens(result.accessToken, result.refreshToken);
-      await _storage.saveUser(result.user);
-
-      _user = result.user;
       _busy = false;
-      _set(AuthStatus.signedIn);
+      _noteSignUp();
       return true;
     } on ApiException catch (error) {
       _error = error.message;
@@ -299,8 +342,23 @@ class AuthController extends ChangeNotifier {
         newPassword: newPassword,
       );
 
+      // Carried over rather than dropped. Changing your password should not
+      // quietly turn "remember me" off — and the alternative is a login screen
+      // that helpfully prefills the password you have just stopped using.
+      // Only when one is already stored: this never starts remembering for
+      // somebody who did not ask.
+      if (await _storage.readRemembered() case final saved?) {
+        await _storage.saveRemembered(
+          RememberedLogin(
+            companyCode: saved.companyCode,
+            email: saved.email,
+            password: newPassword,
+          ),
+        );
+      }
+
       _busy = false;
-      await _clear('Your password was changed. Please sign in again.');
+      await _clear(const AuthNotice('auth.passwordChangedNotice'));
       return null;
     } on ApiException catch (error) {
       _busy = false;
@@ -316,7 +374,7 @@ class AuthController extends ChangeNotifier {
   Future<bool> signInWithGoogle(GoogleSignInService google) async {
     _busy = true;
     _error = null;
-    _expiryNotice = null;
+    _notice = null;
     notifyListeners();
 
     try {
@@ -333,6 +391,7 @@ class AuthController extends ChangeNotifier {
 
       _user = result.user;
       _busy = false;
+      _deletionCancelled = result.deletionCancelled;
       _set(AuthStatus.signedIn);
       return true;
     } on ApiException catch (error) {
@@ -343,10 +402,55 @@ class AuthController extends ChangeNotifier {
     } catch (error) {
       // A misconfigured build throws a StateError rather than an ApiException,
       // and the message says what to fix — so it is shown rather than swallowed.
-      _error = error is StateError ? error.message : 'Could not sign in with Google.';
+      _error = error is StateError
+          ? error.message
+          : 'Could not sign in with Google.';
       _busy = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Schedules this account for deletion and ends the session.
+  ///
+  /// Returns the server's refusal, or null when it was accepted — at which
+  /// point the app is back on the login screen with [notice] explaining the
+  /// deadline. There is no signed-in state to return to: the server revoked
+  /// every token, so staying put would mean a screen whose next request fails.
+  ///
+  /// The local sign-out happens even though the server has already invalidated
+  /// the session. It has to: the tokens are still on this phone, the access
+  /// token stays valid for a few more minutes, and leaving them there would
+  /// leave the app looking signed in to an account on its way out.
+  Future<String?> deleteAccount(String password) async {
+    _busy = true;
+    notifyListeners();
+
+    try {
+      final deletesOn = await _auth.requestAccountDeletion(password);
+
+      // Nothing left to remember. Keeping the credentials would leave the login
+      // screen prefilled for an account on its way out, and signing in is the
+      // one thing that calls the deletion off — which is not something anybody
+      // should be able to do by tapping a button that was already filled in.
+      await _storage.forgetRemembered();
+
+      _busy = false;
+      await _clear(
+        AuthNotice(
+          'deleteAccount.scheduled',
+          args: [Fmt.date(deletesOn)],
+          // Good in the sense that matters here: it is exactly what was asked
+          // for, and drawing it as an error would suggest something went wrong.
+          good: true,
+        ),
+      );
+
+      return null;
+    } on ApiException catch (error) {
+      _busy = false;
+      notifyListeners();
+      return error.message;
     }
   }
 
@@ -374,16 +478,25 @@ class AuthController extends ChangeNotifier {
   void _onSessionExpired() {
     // Fired from an interceptor, potentially mid-build, so the state change is
     // deferred to the next frame rather than mutating during a rebuild.
-    Future.microtask(
-      () => _clear('Your session has expired. Please sign in again.'),
-    );
+    Future.microtask(() => _clear(const AuthNotice('auth.sessionExpired')));
   }
 
-  Future<void> _clear(String? notice) async {
+  /// Signs out locally and leaves [notice] for the login screen.
+  Future<void> _clear(AuthNotice? notice) async {
     await _storage.clear();
     _user = null;
-    _expiryNotice = notice;
+    _notice = notice;
     _set(AuthStatus.signedOut);
+  }
+
+  /// Records that an account was created, without signing into it.
+  ///
+  /// Not [_clear]: there is no session to end — sign-up never opened one — and
+  /// clearing storage here would wipe a session somebody else was already
+  /// signed into, if they reached the sign-up screen from a signed-in phone.
+  void _noteSignUp() {
+    _notice = const AuthNotice('signup.created', good: true);
+    notifyListeners();
   }
 
   void _set(AuthStatus status) {

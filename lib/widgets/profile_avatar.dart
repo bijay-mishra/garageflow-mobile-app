@@ -230,7 +230,7 @@ class _ProfilePhotoButtonState extends State<ProfilePhotoButton> {
                 child: Container(
                   padding: const EdgeInsets.all(3.5),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.of(context).card,
                     shape: BoxShape.circle,
                     boxShadow: AppTheme.shadowCard,
                   ),

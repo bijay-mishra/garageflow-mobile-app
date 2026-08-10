@@ -24,6 +24,20 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
 
+    <!-- Telling the customer their car is ready, and the mechanic that a job
+         landed on them. Required from Android 13 (API 33); below that,
+         notifications are allowed without asking for anything.
+
+         Asked for when the first signed-in session starts polling, not at
+         launch. A permission prompt on the login screen has no context behind
+         it, and "Allow notifications?" before anybody has said who they are is
+         the one most likely to be refused for good.
+
+         POST_NOTIFICATIONS alone. No SCHEDULE_EXACT_ALARM or wake locks:
+         nothing here is scheduled, every alert is raised in response to
+         something the server has already recorded. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <!-- networkSecurityConfig: the API runs over plain HTTP in development
          (localhost:5100), and Android has blocked cleartext since API 28.
          Without it every request fails with a bare connection error that reads

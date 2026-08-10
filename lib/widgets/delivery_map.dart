@@ -258,7 +258,7 @@ class _NoMap extends StatelessWidget {
     height: height,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: AppTheme.ink100,
+      color: AppTheme.of(context).field,
       borderRadius: BorderRadius.circular(AppTheme.radius),
     ),
     child: const Padding(

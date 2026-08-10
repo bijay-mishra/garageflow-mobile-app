@@ -21,6 +21,16 @@ class BillingService {
         .toList();
   }
 
+  /// One bill in full: its lines, its discount and how it was settled.
+  ///
+  /// Scoped to the signed-in customer on the server. Someone else's bill comes
+  /// back as a 404 rather than a 403, so the id cannot be used to find out which
+  /// invoices exist.
+  Future<BillDocument> bill(String id) async {
+    final data = await _api.get<Map<String, dynamic>>('/customer/invoices/$id');
+    return BillDocument.fromJson(data);
+  }
+
   /// The workshop — address, hours, map pin, and which wallets it can take.
   Future<Workshop> workshop() async {
     final data = await _api.get<Map<String, dynamic>>('/workshop');

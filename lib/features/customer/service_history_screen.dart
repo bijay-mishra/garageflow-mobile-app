@@ -7,6 +7,7 @@ import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/job.dart';
 import '../../services/customer_service.dart';
+import '../../widgets/alerts_action.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 import 'customer_job_detail_screen.dart';
@@ -60,7 +61,10 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
     final spent = _jobs.fold<double>(0, (sum, job) => sum + job.total);
 
     return Scaffold(
-      appBar: GradientAppBar(title: t('history.title')),
+      appBar: GradientAppBar(
+        title: t('history.title'),
+        actions: const [AlertsAction(), SizedBox(width: 6)],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
@@ -221,7 +225,10 @@ class _TimelineEntry extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.emerald,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  // The ring's job is to separate the dot from the line running
+                  // behind it, so it has to be the colour of what it sits on —
+                  // not white, which drew a bright halo in dark mode.
+                  border: Border.all(color: palette.background, width: 2),
                 ),
               ),
               Expanded(
@@ -237,7 +244,7 @@ class _TimelineEntry extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Material(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(AppTheme.radius),
               child: InkWell(
                 onTap: onTap,

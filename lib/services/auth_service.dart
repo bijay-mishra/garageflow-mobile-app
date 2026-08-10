@@ -10,6 +10,7 @@ class AuthService {
   /// Signs in. `noAuth` matters: a 401 here means bad credentials, and the
   /// client must show the server's message rather than trying to refresh a
   /// session that was never established.
+  ///
   Future<AuthResult> login({
     required String companyCode,
     required String email,
@@ -26,6 +27,25 @@ class AuthService {
     );
 
     return AuthResult.fromJson(data);
+  }
+
+  /// Schedules this account for deletion, and returns the day it happens.
+  ///
+  /// Nothing is gone when this returns. The account keeps working for thirty
+  /// days, and signing in again during them calls the whole thing off — which
+  /// is why the server ends every session here, this one included: a client
+  /// left signed in would refresh its token in the background and silently undo
+  /// what the person just asked for.
+  Future<DateTime> requestAccountDeletion(String password) async {
+    final data = await _api.post<Map<String, dynamic>>(
+      '/auth/delete-account',
+      body: {'password': password},
+    );
+
+    // The server does the date arithmetic, so the app and the server cannot
+    // disagree about the one date that matters here. Local, so it reads as the
+    // day it will be where the person is standing.
+    return DateTime.parse(data['scheduledFor'] as String).toLocal();
   }
 
   Future<AuthUser> me() async {

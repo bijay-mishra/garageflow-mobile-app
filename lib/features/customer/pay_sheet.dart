@@ -180,7 +180,7 @@ class _PaySheetState extends State<PaySheet> with WidgetsBindingObserver {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               decoration: BoxDecoration(
-                color: AppTheme.brandLight,
+                color: palette.accentWash,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               ),
               child: Row(
@@ -371,7 +371,7 @@ class _ProviderButton extends StatelessWidget {
     return Opacity(
       opacity: enabled ? 1 : 0.6,
       child: Material(
-        color: Colors.white,
+        color: AppTheme.of(context).card,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         child: InkWell(
           onTap: enabled ? onTap : null,

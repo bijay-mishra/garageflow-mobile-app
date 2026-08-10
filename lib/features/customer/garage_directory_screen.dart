@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../models/workshop_card.dart';
 import '../../services/directory_service.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/alerts_action.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
 
@@ -262,6 +263,10 @@ class _GarageDirectoryScreenState extends State<GarageDirectoryScreen> {
                   tooltip: t('garages.sortNearest'),
                   onPressed: _locating ? null : () => _locate(),
                 ),
+                // Not on the must-choose screen: an account with no garage has
+                // nothing in its feed, and the only thing it should be doing
+                // here is picking one.
+                if (!widget.mustChoose) const AlertsAction(),
               ],
               floating: _SearchField(
                 controller: _search,
@@ -358,7 +363,7 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppTheme.of(context).card,
       borderRadius: BorderRadius.circular(AppTheme.radius),
       boxShadow: AppTheme.shadowLifted,
     ),

@@ -36,9 +36,12 @@ class GradientHeader extends StatelessWidget {
   /// pass plain [IconData] through that rather than raw [IconButton]s.
   final List<Widget> actions;
 
-  /// A card that hangs off the bottom edge, half on the gradient and half on
-  /// the page. This is what makes the header feel like a layer rather than a
-  /// stripe, and it is where the numbers go.
+  /// A card that straddles the bottom edge — mostly on the gradient, with its
+  /// last [_overhang] points on the page. This is what makes the header feel
+  /// like a layer rather than a stripe, and it is where the numbers go.
+  ///
+  /// Any height is fine: the gradient grows to fit it rather than the card
+  /// climbing over the title.
   final Widget? floating;
 
   /// Shows a back chevron. Null on a shell's root screen.
@@ -46,117 +49,150 @@ class GradientHeader extends StatelessWidget {
 
   final double padBottom;
 
-  /// How far [floating] hangs below the gradient.
+  /// How far [floating] hangs below the gradient's bottom edge.
   static const _overhang = 34.0;
+
+  /// Gap between the title row and [floating].
+  static const _gapAbove = 14.0;
+
+  /// Gap between [floating] and whatever the page puts underneath it.
+  static const _gapBelow = 14.0;
 
   @override
   Widget build(BuildContext context) {
-    final band = Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
+    final titleRow = SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          onBack != null ? 6 : 18,
+          // 18, not 10. SafeArea already clears the status bar, but clearing
+          // it and sitting *on* it are different things — at 10 the greeting
+          // started immediately under the clock and the whole band read as
+          // cramped. This is the gap that makes the header feel like a header.
+          18,
+          10,
+          // With a floating card the gap below the title is the card's own
+          // margin, not this.
+          floating != null ? _gapAbove : padBottom,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (onBack != null)
+              _HeaderIcon(
+                icon: Icons.arrow_back_rounded,
+                onPressed: onBack!,
+                tooltip: 'Back',
+              ),
+            if (leading != null) ...[leading!, const SizedBox(width: 12)],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppTheme.onHeader,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1.15,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppTheme.onHeaderMuted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            ...actions,
+          ],
+        ),
+      ),
+    );
+
+    const gradient = DecoratedBox(
+      decoration: BoxDecoration(
         gradient: AppTheme.headerGradient,
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(AppTheme.radiusHeader),
         ),
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            onBack != null ? 6 : 18,
-            // 18, not 10. SafeArea already clears the status bar, but clearing
-            // it and sitting *on* it are different things — at 10 the greeting
-            // started immediately under the clock and the whole band read as
-            // cramped. This is the gap that makes the header feel like a header.
-            18,
-            10,
-            // Room for the floating card to sit on colour rather than straddling
-            // the rounded corner.
-            floating != null ? padBottom + 18 : padBottom,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (onBack != null)
-                _HeaderIcon(
-                  icon: Icons.arrow_back_rounded,
-                  onPressed: onBack!,
-                  tooltip: 'Back',
-                ),
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppTheme.onHeader,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        height: 1.15,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppTheme.onHeaderMuted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              ...actions,
-            ],
-          ),
-        ),
-      ),
+      child: SizedBox.expand(),
     );
 
     // A light status bar is only correct while the gradient is under it. Set
     // here rather than in the theme because a screen with no header — the login
     // form on white — needs the opposite.
-    final styled = AnnotatedRegion<SystemUiOverlayStyle>(
+    Widget wrap(Widget child) => AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: band,
+      child: child,
     );
 
-    if (floating == null) return styled;
-
-    return Column(
-      children: [
-        // clipBehavior none, so the negatively-positioned card is drawn rather
-        // than cut off at the gradient's edge.
+    if (floating == null) {
+      return wrap(
         Stack(
-          clipBehavior: Clip.none,
           children: [
-            styled,
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: -_overhang,
-              child: floating!,
-            ),
+            const Positioned.fill(child: gradient),
+            titleRow,
           ],
         ),
-        // Reclaims the space the overhang is drawn into. Without this the first
-        // real content block would sit underneath the floating card.
-        const SizedBox(height: _overhang + 14),
-      ],
+      );
+    }
+
+    // The card is a child in the flow rather than a negatively-positioned one,
+    // and the gradient is painted behind it up to [_overhang] short of its
+    // bottom edge. Two bugs came out of doing it the other way round.
+    //
+    // The first was that a box painted outside its parent's bounds gets no hit
+    // tests — `RenderBox.hitTest` checks `size.contains(position)` before it
+    // looks at any child — so the 34pt of card hanging below the gradient was
+    // dead to touch. On the garage directory that is most of the search field,
+    // which is why searching appeared not to work at all: only the top few
+    // points of the box could take focus.
+    //
+    // The second was that hanging a card of unknown height off a fixed point
+    // means a tall one grows *upwards*. The home screen's active-job card is
+    // ~120pt, so its top ended up above the greeting and over the header
+    // buttons, hiding both. Laid out this way the gap above the card is a
+    // constant and the gradient grows to fit instead.
+    return wrap(
+      Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: _overhang + _gapBelow,
+            child: gradient,
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              titleRow,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: floating!,
+              ),
+              const SizedBox(height: _gapBelow),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

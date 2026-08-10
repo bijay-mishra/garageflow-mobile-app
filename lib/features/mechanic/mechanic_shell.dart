@@ -104,7 +104,7 @@ class NotificationBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.rose,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white, width: 1.5),
+              border: Border.all(color: AppTheme.of(context).card, width: 1.5),
             ),
             child: Text(
               count > 9 ? '9+' : '$count',

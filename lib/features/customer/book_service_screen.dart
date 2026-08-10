@@ -187,7 +187,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
           const SizedBox(height: 10),
 
           Material(
-            color: Colors.white,
+            color: palette.card,
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             child: InkWell(
               onTap: _pickDate,
@@ -315,7 +315,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
           Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: AppTheme.brandLight,
+              color: palette.accentWash,
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
             child: Row(
@@ -347,7 +347,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: palette.card,
           border: Border(top: BorderSide(color: palette.border)),
         ),
         child: Column(
@@ -439,7 +439,7 @@ class _VehicleOption extends StatelessWidget {
     final palette = AppTheme.of(context);
 
     return Material(
-    color: selected ? AppTheme.brandLight : Colors.white,
+    color: selected ? palette.accentWash : palette.card,
     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
     child: InkWell(
       onTap: onTap,

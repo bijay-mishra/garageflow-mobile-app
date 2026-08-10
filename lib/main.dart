@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'core/api_client.dart';
+import 'core/device_notifications.dart';
 import 'core/token_storage.dart';
 import 'services/auth_service.dart';
 import 'services/billing_service.dart';
@@ -10,10 +11,12 @@ import 'services/catalogue_service.dart';
 import 'services/customer_service.dart';
 import 'services/delivery_service.dart';
 import 'services/directory_service.dart';
+import 'services/loyalty_service.dart';
 import 'services/support_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/mechanic_service.dart';
 import 'services/notification_service.dart';
+import 'services/plans_service.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
 import 'state/settings_controller.dart';
@@ -26,6 +29,12 @@ Future<void> main() async {
   // refresh token, and the server rotates it on use.
   final storage = TokenStorage();
   final api = ApiClient(storage);
+
+  // Prepares the plugin and the Android channel. Not a permission request —
+  // that waits until somebody has signed in and there is a reason to give. Safe
+  // to await: it swallows its own failures, so a phone that refuses to set up
+  // notifications still gets the app.
+  await DeviceNotifications.init();
 
   // Awaited before the first frame on purpose. Theme, language and text size
   // are read during the very first build, and loading them afterwards would
@@ -49,6 +58,11 @@ Future<void> main() async {
         Provider(create: (_) => NotificationApi(api)),
         // The garage directory, signing up, and switching between garages.
         Provider(create: (_) => DirectoryService(api)),
+        // What GarageFlow costs. Needs no session — a price list is public.
+        Provider(create: (_) => PlansService(api)),
+        // Rewards, offers and star ratings. Shared: the customer reads their
+        // own card and rates finished work, the mechanic reads their score.
+        Provider(create: (_) => LoyaltyService(api)),
         // Sign in with Google. Inert unless a client ID is compiled in.
         Provider(create: (_) => GoogleSignInService(api)),
         // Handovers. Shared: a driver and a customer look at the same record.

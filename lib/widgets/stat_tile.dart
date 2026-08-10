@@ -42,21 +42,33 @@ class StatStrip extends StatelessWidget {
     return AppCard(
       lifted: true,
       padding: EdgeInsets.zero,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < stats.length; i++) ...[
-            if (i > 0)
-              VerticalDivider(
-                width: 1,
-                thickness: 1,
-                indent: 16,
-                endIndent: 16,
-                color: palette.border,
-              ),
-            Expanded(child: _Cell(stat: stats[i])),
+      // IntrinsicHeight, and it is load-bearing. `stretch` on a Row stretches
+      // along the *cross* axis, which is vertical, so it needs a bounded height
+      // to stretch to — and this card is laid out inside a Column, which hands
+      // its children an unbounded one. Without this the Row demands infinite
+      // height, the whole strip fails to lay out, and the mechanic's jobs
+      // screen renders as a blank page.
+      //
+      // Two things need the stretch and neither is cosmetic: the dividers have
+      // no height of their own, and the selected cell's colour wash has to
+      // reach the edges of the card rather than stopping at the text.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < stats.length; i++) ...[
+              if (i > 0)
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: palette.border,
+                ),
+              Expanded(child: _Cell(stat: stats[i])),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
