@@ -99,11 +99,23 @@ class AuthResult {
     required this.refreshToken,
     required this.user,
     this.deletionCancelled = false,
+    this.mustSetPassword = false,
   });
 
   final String accessToken;
   final String refreshToken;
   final AuthUser user;
+
+  /// True when this account is still on a password somebody else typed for it —
+  /// a mechanic created on the dashboard's Staff screen, or an account whose
+  /// password an owner has just reset.
+  ///
+  /// The token that comes back is real but restricted: the server refuses every
+  /// endpoint but `/auth/me`, `/auth/logout` and `/auth/set-password` until a
+  /// password of their own is chosen. Ignoring this flag is therefore not a
+  /// cosmetic omission — it produces a session that signs in successfully and
+  /// then 403s on everything, which reads as the app being broken.
+  final bool mustSetPassword;
 
   /// True when this sign-in called off a deletion the account had asked for.
   ///
@@ -117,5 +129,6 @@ class AuthResult {
     refreshToken: json['refreshToken'] as String,
     user: AuthUser.fromJson(json['user'] as Map<String, dynamic>),
     deletionCancelled: json['deletionCancelled'] as bool? ?? false,
+    mustSetPassword: json['mustSetPassword'] as bool? ?? false,
   );
 }

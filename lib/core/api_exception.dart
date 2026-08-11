@@ -1,3 +1,5 @@
+import 'dart:io' show HandshakeException;
+
 import 'package:dio/dio.dart';
 
 /// A failed request, already turned into something worth showing a user.
@@ -42,6 +44,25 @@ class ApiException implements Exception {
       );
     }
 
+    // A TLS failure has to be peeled off before the switch below. Dio reports a
+    // rejected certificate as `unknown` wrapping a HandshakeException as often
+    // as it reports `badCertificate`, and `unknown` with no response falls all
+    // the way through to "Something went wrong" — which is how the single most
+    // diagnosable failure the app has came to be its vaguest message. Android
+    // validates against the system root store and offers no way past it, so a
+    // self-signed certificate, or a chain served without its intermediate,
+    // fails every request on the phone while the same URL loads in a browser
+    // the user clicked through weeks ago.
+    if (error.type == DioExceptionType.badCertificate ||
+        error.error is HandshakeException) {
+      return ApiException(
+        'The workshop server\'s security certificate is not trusted, so the app '
+        'will not connect to it. This is a setting on the server, not on your '
+        'phone.',
+        statusCode: response?.statusCode,
+      );
+    }
+
     final message = switch (error.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||
@@ -50,8 +71,6 @@ class ApiException implements Exception {
       DioExceptionType.connectionError =>
         'Could not reach the workshop server. Check your connection, or ask the '
             'workshop whether the server is running.',
-      DioExceptionType.badCertificate =>
-        'The connection to the workshop server is not secure.',
       DioExceptionType.cancel => 'Request cancelled.',
       // `int?` cannot be compared with `>=`, so the null case is peeled off
       // first and the rest matches against a non-nullable code.

@@ -4,6 +4,8 @@
 // facts cannot both hold with an initializing formal.
 // ignore_for_file: prefer_initializing_formals
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
@@ -93,6 +95,41 @@ class AuthController extends ChangeNotifier {
   bool _deletionCancelled = false;
   bool get deletionCancelled => _deletionCancelled;
 
+  /// True while this session is still on a password somebody else typed for it.
+  ///
+  /// The account is genuinely signed in — the token is real — but the server
+  /// refuses everything except `/auth/me`, `/auth/logout` and
+  /// `/auth/set-password` until a password of their own is chosen. `AuthGate`
+  /// reads this and shows [SetPasswordScreen] instead of the shell, because a
+  /// shell whose every request 403s is indistinguishable from a broken app.
+  bool _mustSetPassword = false;
+  bool get mustSetPassword => _mustSetPassword;
+
+  /// The server's own code for that refusal, on any endpoint.
+  ///
+  /// A backstop for the routes into this state that do not go through [login] —
+  /// an owner resetting the password of an account that is already signed in on
+  /// a phone. The next request that phone makes comes back 403 carrying this,
+  /// and the app moves to the set-password screen rather than showing "you do
+  /// not have permission" for something the user can actually fix.
+  static const _mustSetPasswordCode = 'must_set_password';
+
+  static bool _isMustSetPassword(ApiException error) =>
+      error.statusCode == 403 &&
+      (error.fieldErrors?.containsKey(_mustSetPasswordCode) ?? false);
+
+  /// Moves the session into the half-signed-in state. Returns true if it
+  /// applied, so a caller can stop treating the failure as its own problem.
+  bool noteMustSetPassword(ApiException error) {
+    if (!_isMustSetPassword(error)) return false;
+    if (_mustSetPassword) return true;
+
+    _mustSetPassword = true;
+    unawaited(_storage.saveMustSetPassword(true));
+    notifyListeners();
+    return true;
+  }
+
   bool consumeDeletionCancelled() {
     if (!_deletionCancelled) return false;
     _deletionCancelled = false;
@@ -115,6 +152,12 @@ class AuthController extends ChangeNotifier {
     }
 
     _user = cached;
+
+    // Restored before the shell is chosen, not after. This outlives the app:
+    // the restriction is on the server, so a relaunch that forgot it would open
+    // straight into the job list and 403 on every request in it.
+    _mustSetPassword = await _storage.readMustSetPassword();
+
     _set(AuthStatus.signedIn);
 
     try {
@@ -123,6 +166,12 @@ class AuthController extends ChangeNotifier {
       await _storage.saveUser(fresh);
       notifyListeners();
     } on ApiException catch (error) {
+      // A half-signed-in session is not an expired one. `/auth/me` is one of the
+      // endpoints the server still allows, so this is a belt-and-braces path —
+      // but signing them out here would be exactly wrong: the fix is a screen
+      // they can reach, not another trip through login.
+      if (noteMustSetPassword(error)) return;
+
       // Only a rejection ends the session. A dead connection must not sign
       // someone out — a mechanic in a workshop basement should still see the
       // jobs they loaded earlier.
@@ -163,10 +212,17 @@ class AuthController extends ChangeNotifier {
 
       await _storage.saveTokens(result.accessToken, result.refreshToken);
       await _storage.saveUser(result.user);
+      await _storage.saveMustSetPassword(result.mustSetPassword);
 
       _user = result.user;
       _busy = false;
       _deletionCancelled = result.deletionCancelled;
+
+      // Signed in either way — the token is real. What changes is which screen
+      // `AuthGate` builds, because the server will refuse the shell's requests
+      // until this is cleared.
+      _mustSetPassword = result.mustSetPassword;
+
       _set(AuthStatus.signedIn);
       return true;
     } on ApiException catch (error) {
@@ -174,6 +230,54 @@ class AuthController extends ChangeNotifier {
       _busy = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Replaces the handed-over password with one of their own, and completes the
+  /// sign-in that has been half-finished until now.
+  ///
+  /// Returns the server's refusal, or null when it was accepted. Unlike
+  /// [changePassword] this does *not* sign them out: the server hands back a
+  /// fresh token pair precisely so it does not have to, and a login screen at
+  /// this point is how a first-run flow gets abandoned — leaving the account
+  /// sitting on the password somebody else knows, which is what the whole flow
+  /// exists to prevent.
+  Future<String?> setPassword(String newPassword) async {
+    _busy = true;
+    notifyListeners();
+
+    try {
+      final result = await _auth.setPassword(newPassword);
+
+      // These replace the tokens on this phone rather than adding to them. The
+      // server revoked every session on the way through — including this one —
+      // so the tokens held a moment ago are already dead.
+      await _storage.saveTokens(result.accessToken, result.refreshToken);
+      await _storage.saveUser(result.user);
+      await _storage.saveMustSetPassword(false);
+
+      // A remembered login holds the password that has just stopped working.
+      // Updating it keeps "remember me" honest; not doing so would leave the
+      // sign-in form prefilled with a credential the server now rejects.
+      if (await _storage.readRemembered() case final saved?) {
+        await _storage.saveRemembered(
+          RememberedLogin(
+            companyCode: saved.companyCode,
+            email: saved.email,
+            password: newPassword,
+          ),
+        );
+      }
+
+      _user = result.user;
+      _mustSetPassword = false;
+      _busy = false;
+      notifyListeners();
+      return null;
+    } on ApiException catch (error) {
+      _busy = false;
+      notifyListeners();
+      return error.message;
     }
   }
 
@@ -388,10 +492,12 @@ class AuthController extends ChangeNotifier {
 
       await _storage.saveTokens(result.accessToken, result.refreshToken);
       await _storage.saveUser(result.user);
+      await _storage.saveMustSetPassword(result.mustSetPassword);
 
       _user = result.user;
       _busy = false;
       _deletionCancelled = result.deletionCancelled;
+      _mustSetPassword = result.mustSetPassword;
       _set(AuthStatus.signedIn);
       return true;
     } on ApiException catch (error) {
@@ -486,6 +592,7 @@ class AuthController extends ChangeNotifier {
     await _storage.clear();
     _user = null;
     _notice = notice;
+    _mustSetPassword = false;
     _set(AuthStatus.signedOut);
   }
 

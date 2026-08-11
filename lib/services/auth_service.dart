@@ -86,6 +86,25 @@ class AuthService {
     body: {'currentPassword': currentPassword, 'newPassword': newPassword},
   );
 
+  /// Replaces the one-time password this account was handed, on first sign-in.
+  ///
+  /// No current password: the session was opened with the handed-over one
+  /// seconds ago and the bearer token proves it. Asking again would only be
+  /// friction, and the whole point of the screen is that the old password stops
+  /// mattering.
+  ///
+  /// Returns a fresh token pair rather than sending them back to the login
+  /// screen — the server revokes every other session on the way through, so the
+  /// tokens held here are already dead and must be replaced with these.
+  Future<AuthResult> setPassword(String newPassword) async {
+    final data = await _api.post<Map<String, dynamic>>(
+      '/auth/set-password',
+      body: {'newPassword': newPassword},
+    );
+
+    return AuthResult.fromJson(data);
+  }
+
   /// Uploads a profile photo.
   Future<AuthUser> uploadPhoto(String filePath) async {
     final data = await _api.upload<Map<String, dynamic>>(

@@ -12,20 +12,27 @@ class AppConfig {
   /// handset means the handset, so every request failed and the app looked
   /// broken rather than misconfigured.
   ///
-  /// It is plain **HTTP**, and both platforms block cleartext by default:
-  /// Android from API 28, iOS through App Transport Security. The host is
-  /// listed as an exception in
-  /// `android/app/src/main/res/xml/network_security_config.xml` and in
-  /// `ios/Runner/Info.plist`. Point this at a different plain-HTTP server and
-  /// you must add it to both, or requests fail in a way that reads as a dead
-  /// network rather than a policy refusal.
+  /// **HTTPS**, which is what it should be: credentials and bearer tokens are
+  /// encrypted in transit, and Play's Data safety form can honestly say so.
+  /// Nothing needs a cleartext exception for this host — the entries in
+  /// `android/app/src/main/res/xml/network_security_config.xml` and
+  /// `ios/Runner/Info.plist` now cover only the local development addresses.
   ///
-  /// Sign-in credentials and bearer tokens therefore cross the network
-  /// unencrypted. That is workable for testing and is not acceptable for a
-  /// public release — Play's Data safety form asks whether data is encrypted in
-  /// transit, and on this address the honest answer is no. See
-  /// `store/data-safety.md`. Moving to HTTPS is a server change; the only edit
-  /// here is the scheme.
+  /// The certificate has to be one the *phone* trusts, which is a stricter bar
+  /// than a browser: Android validates against its own root store and there is
+  /// no "proceed anyway". A self-signed certificate, or a chain served without
+  /// its intermediate, fails every request with a handshake error that reads
+  /// like the server being down. Verify with:
+  ///
+  /// ```
+  /// curl -sI https://app.bijayamishra.com.np/api/plans
+  /// ```
+  ///
+  /// If that needs `-k` to succeed, the app will not connect.
+  ///
+  /// Point this at a plain-HTTP server instead and the host must be added to
+  /// both platform exception files, or requests fail in a way that reads as a
+  /// dead network rather than a policy refusal.
   ///
   /// Override at build time. It is a compile-time constant, so changing it is a
   /// rebuild rather than a setting:
@@ -54,7 +61,7 @@ class AppConfig {
   /// The Account screen shows which server the app is talking to.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://202.51.3.68:8013',
+    defaultValue: 'https://app.bijayamishra.com.np',
   );
 
   /// Prefix every endpoint sits under.

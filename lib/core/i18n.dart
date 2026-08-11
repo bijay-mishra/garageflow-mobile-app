@@ -191,6 +191,23 @@ const Map<String, String> _en = {
   'forgot.done': 'Password updated',
   'forgot.doneNote': 'Sign in with your new password.',
 
+  // First sign-in on an account somebody else created. The wording avoids
+  // "temporary password", because the person usually does not know theirs was
+  // one — they were simply handed a password by whoever set the account up.
+  'setPassword.title': 'Choose your password',
+  'setPassword.greeting': 'Welcome, {0}',
+  'setPassword.intro':
+      'Your account was set up for you, so the password you just signed in with '
+      'is known to whoever created it. Choose one only you know to carry on.',
+  'setPassword.newPassword': 'New password',
+  'setPassword.confirmPassword': 'Confirm new password',
+  'setPassword.enterNewPassword': 'Choose a password',
+  'setPassword.shortPassword': 'Use at least 8 characters',
+  'setPassword.mismatch': 'Both passwords must match',
+  'setPassword.save': 'Save and continue',
+  'setPassword.done': 'Password set. You are signed in.',
+  'setPassword.signOut': 'Sign out instead',
+
   // Sign up
   'signup.title': 'Create your account',
   'signup.subtitle': 'Then pick your garage',
@@ -979,6 +996,20 @@ const Map<String, String> _ne = {
   'forgot.save': 'पासवर्ड रिसेट गर्नुहोस्',
   'forgot.done': 'पासवर्ड अपडेट भयो',
   'forgot.doneNote': 'नयाँ पासवर्डले साइन इन गर्नुहोस्।',
+
+  'setPassword.title': 'आफ्नो पासवर्ड छान्नुहोस्',
+  'setPassword.greeting': 'स्वागत छ, {0}',
+  'setPassword.intro':
+      'तपाईंको खाता अरूले खोलिदिएको हो, त्यसैले भर्खर प्रयोग गर्नुभएको पासवर्ड '
+      'खाता खोल्नेलाई थाहा छ। अगाडि बढ्न आफूलाई मात्र थाहा हुने पासवर्ड छान्नुहोस्।',
+  'setPassword.newPassword': 'नयाँ पासवर्ड',
+  'setPassword.confirmPassword': 'नयाँ पासवर्ड पुष्टि गर्नुहोस्',
+  'setPassword.enterNewPassword': 'पासवर्ड छान्नुहोस्',
+  'setPassword.shortPassword': 'कम्तीमा ८ अक्षर राख्नुहोस्',
+  'setPassword.mismatch': 'दुवै पासवर्ड मिल्नुपर्छ',
+  'setPassword.save': 'सुरक्षित गरी अगाडि बढ्नुहोस्',
+  'setPassword.done': 'पासवर्ड सेट भयो। तपाईं साइन इन हुनुभयो।',
+  'setPassword.signOut': 'बरु साइन आउट गर्नुहोस्',
 
   'signup.title': 'खाता खोल्नुहोस्',
   'signup.subtitle': 'त्यसपछि ग्यारेज छान्नुहोस्',

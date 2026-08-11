@@ -26,9 +26,24 @@ class TokenStorage {
   static const _refreshKey = 'gf_refresh_token';
   static const _userKey = 'gf_user';
   static const _rememberKey = 'gf_remembered_login';
+  static const _mustSetPasswordKey = 'gf_must_set_password';
 
   Future<String?> readAccessToken() => _storage.read(key: _accessKey);
   Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
+
+  // ── Half-signed-in ─────────────────────────────────────────────────────────
+
+  /// Whether the stored session is still on a password somebody else typed.
+  ///
+  /// Persisted rather than kept in memory because the restriction lives on the
+  /// server and survives a relaunch: an app that forgot this on restart would
+  /// reopen straight into the mechanic's job list, where every request 403s.
+  Future<void> saveMustSetPassword(bool required) => required
+      ? _storage.write(key: _mustSetPasswordKey, value: 'true')
+      : _storage.delete(key: _mustSetPasswordKey);
+
+  Future<bool> readMustSetPassword() async =>
+      await _storage.read(key: _mustSetPasswordKey) == 'true';
 
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     await _storage.write(key: _accessKey, value: accessToken);
@@ -64,6 +79,7 @@ class TokenStorage {
     await _storage.delete(key: _accessKey);
     await _storage.delete(key: _refreshKey);
     await _storage.delete(key: _userKey);
+    await _storage.delete(key: _mustSetPasswordKey);
   }
 
   // ── Remember me ────────────────────────────────────────────────────────────

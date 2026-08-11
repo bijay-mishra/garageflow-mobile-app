@@ -5,6 +5,7 @@ import 'core/formatters.dart';
 import 'core/i18n.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/set_password_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/customer/choose_garage_shell.dart';
 import 'features/customer/customer_shell.dart';
@@ -77,6 +78,15 @@ class AuthGate extends StatelessWidget {
       AuthStatus.signedOut => _stopPolling(notifications, const LoginScreen()),
       // The lock wraps only the signed-in shells. Locking the login screen
       // would leave anyone whose fingerprint stopped working with no way in.
+      // Signed in, but still on a password somebody else typed. The shell is
+      // deliberately not built: the server refuses its every request until this
+      // is done, so showing it would be five tabs of "you do not have
+      // permission". Polling stays off for the same reason.
+      AuthStatus.signedIn when auth.mustSetPassword => _stopPolling(
+        notifications,
+        const SetPasswordScreen(),
+      ),
+
       AuthStatus.signedIn => LockGate(
         child: _announceDeletionCancelled(
           context,
