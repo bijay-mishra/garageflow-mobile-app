@@ -26,13 +26,17 @@ flutter run
 
 ### Pointing it at your server
 
-The default is `http://10.0.2.2:5100` — the Android emulator's alias for the
-host machine. This trips everyone up once: inside the emulator, `localhost` is
-the *emulator*, not your PC, so a server that is plainly running looks dead.
+The default is `http://202.51.3.68:8013` — the live API server. A build made
+with no flags at all reaches something real, which is the point of the default.
+It is plain HTTP for now, so passwords and tokens are not encrypted in transit;
+that changes when `https://app.bijayamishra.com.np` is serving the API, at
+which point `apiBaseUrl` in [config.dart](lib/core/config.dart) goes back to it.
+
+To develop against an API on your own machine instead:
 
 | Where you are running | Pass this |
 | --- | --- |
-| Android emulator | nothing — the default is right |
+| Android emulator | `--dart-define=API_BASE_URL=http://10.0.2.2:5100` |
 | iOS simulator | `--dart-define=API_BASE_URL=http://localhost:5100` |
 | Real phone on your wifi | `--dart-define=API_BASE_URL=http://192.168.x.x:5100` |
 
@@ -40,10 +44,14 @@ the *emulator*, not your PC, so a server that is plainly running looks dead.
 flutter run --dart-define=API_BASE_URL=http://192.168.1.20:5100
 ```
 
-For a real device, also add that address to
-`android/app/src/main/res/xml/network_security_config.xml` — cleartext HTTP is
-allowed for local development hosts only, so a deployed build still requires
-HTTPS.
+`10.0.2.2` is the emulator's alias for the host machine, and this trips everyone
+up once: inside the emulator `localhost` is the *emulator*, not your PC, so a
+server that is plainly running looks dead.
+
+Any host you point at over plain HTTP must also be listed in
+`android/app/src/main/res/xml/network_security_config.xml` (and
+`ios/Runner/Info.plist` for iOS), or the request never leaves the phone and the
+failure reads like a dead network rather than a blocked one.
 
 ## Signing in
 

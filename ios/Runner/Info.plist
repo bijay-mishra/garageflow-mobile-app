@@ -17,14 +17,27 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Attach photos of the vehicle you are working on to a job card.</string>
 
-	<!-- The API runs over plain HTTP on localhost during development, which
-	     App Transport Security blocks by default. Scoped to localhost only:
-	     a deployed build talking to a real host still requires HTTPS. -->
+	<!-- The API runs over plain HTTP, which App Transport Security blocks by
+	     default. Scoped to named hosts rather than a blanket allowance, so no
+	     other host can quietly downgrade.
+
+	     localhost    the API on your machine during development
+	     202.51.3.68  the server AppConfig.apiBaseUrl points at, port 8013
+
+	     The second one is temporary: it is the live API, reachable only over
+	     http for now. Remove it once that API is served over https, and keep
+	     it in step with the Android list in
+	     android/app/src/main/res/xml/network_security_config.xml. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>202.51.3.68</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>

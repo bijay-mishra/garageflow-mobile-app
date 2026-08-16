@@ -15,14 +15,18 @@
     127.0.0.1     a device port-forwarded with `adb reverse`
     localhost     the same, by name
     192.168.1.97  this PC's LAN address, for a phone on the same wifi
+    202.51.3.68   the API server the app currently points at
 
-  A domain entry covers every port, so a port number never appears here.
+  A domain entry covers every port, so a port number never appears here — the
+  :8013 the app talks to is covered by the 202.51.3.68 entry.
 
-  Every entry left is a development address on this machine. The live API is
-  https://app.bijayamishra.com.np and is NOT listed, which is the point: the
-  release build can only reach it over TLS, and no production traffic can
-  quietly fall back to cleartext. Do not add it back — if the app cannot reach
-  the server, the certificate is the thing to fix, not this file.
+  That last one is not a development address: it is the live API, and it is
+  here because the app is talking to it over plain HTTP for now, which means
+  passwords and bearer tokens cross the network unencrypted. It is a temporary
+  arrangement. When https://app.bijayamishra.com.np is serving that API, point
+  AppConfig.apiBaseUrl back at it and delete the 202.51.3.68 line — an HTTPS
+  host needs no entry here, and leaving it would let production traffic quietly
+  fall back to cleartext.
 
   Testing against a server not in this list? Add it here as well as passing it
   as the API_BASE_URL dart-define, or the request never leaves the phone:
@@ -44,5 +48,10 @@
              with `ipconfig` and update this if the app suddenly cannot
              connect. -->
         <domain includeSubdomains="false">192.168.1.97</domain>
+
+        <!-- The API server AppConfig.apiBaseUrl points at (port 8013), served
+             over http rather than https for now. Temporary — remove this once
+             the domain with a real certificate is in front of it. -->
+        <domain includeSubdomains="false">202.51.3.68</domain>
     </domain-config>
 </network-security-config>
