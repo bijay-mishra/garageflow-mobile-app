@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import '../core/api_exception.dart';
 import '../core/formatters.dart';
 import '../models/booking.dart';
 import '../models/job.dart';
@@ -29,6 +30,18 @@ class CustomerService {
   /// [fuel] and [type] are sent as the server's own vocabulary rather than the
   /// translated label on screen — the Nepali for "Petrol" is not a value the
   /// API accepts.
+  ///
+  /// A lost reply is not a failed write. This is the one call in the customer
+  /// app that both creates something and cannot be safely repeated, and over a
+  /// phone connection the request routinely arrives while the response does
+  /// not — the row is committed and the app hears nothing. Reporting that as an
+  /// error was wrong twice over: the customer was told their car had not been
+  /// added while it sat on their account, and tapping Add again came back as
+  /// "already registered at this garage. Ask the workshop", which is advice to
+  /// go and solve a problem that does not exist.
+  ///
+  /// So a connection-class failure asks the server what it actually holds
+  /// before deciding. Only a genuine miss is reported as one.
   Future<Vehicle> addVehicle({
     required String plate,
     required String make,
@@ -39,21 +52,51 @@ class CustomerService {
     int odometer = 0,
     String color = '',
   }) async {
-    final data = await _api.post<Map<String, dynamic>>(
-      '/customer/vehicles',
-      body: {
-        'plate': plate.trim(),
-        'make': make.trim(),
-        'model': model.trim(),
-        'year': year,
-        'type': type,
-        'fuel': fuel,
-        'odometer': odometer,
-        'color': color.trim(),
-      },
-    );
+    try {
+      final data = await _api.post<Map<String, dynamic>>(
+        '/customer/vehicles',
+        body: {
+          'plate': plate.trim(),
+          'make': make.trim(),
+          'model': model.trim(),
+          'year': year,
+          'type': type,
+          'fuel': fuel,
+          'odometer': odometer,
+          'color': color.trim(),
+        },
+      );
 
-    return Vehicle.fromJson(data);
+      return Vehicle.fromJson(data);
+    } on ApiException catch (error) {
+      // Anything the server answered — a duplicate plate, a rejected year — is
+      // its verdict and stands. Only "no answer at all" is ambiguous.
+      if (!error.isConnectionProblem) rethrow;
+
+      final saved = await _vehicleByPlate(plate.trim());
+      if (saved != null) return saved;
+
+      rethrow;
+    }
+  }
+
+  /// The customer's vehicle carrying [plate], or null if there is none.
+  ///
+  /// Used to settle an add whose reply was lost. A failure here is swallowed:
+  /// the second call teaches nothing the first did not, and the original
+  /// error is the one worth showing.
+  Future<Vehicle?> _vehicleByPlate(String plate) async {
+    try {
+      final mine = await vehicles();
+
+      for (final vehicle in mine) {
+        if (vehicle.plate.toLowerCase() == plate.toLowerCase()) return vehicle;
+      }
+    } on ApiException {
+      // Still offline, most likely. Fall through to the original failure.
+    }
+
+    return null;
   }
 
   /// Corrects one of the customer's own vehicles.
