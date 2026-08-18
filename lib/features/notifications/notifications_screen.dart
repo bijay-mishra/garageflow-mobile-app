@@ -5,12 +5,10 @@ import '../../core/formatters.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../models/app_notification.dart';
-import '../../state/auth_controller.dart';
+import '../../core/app_navigator.dart';
 import '../../state/notification_controller.dart';
 import '../../widgets/gradient_header.dart';
 import '../../widgets/states.dart';
-import '../customer/customer_job_detail_screen.dart';
-import '../mechanic/mechanic_job_detail_screen.dart';
 
 /// The in-app feed, shared by both roles.
 ///
@@ -25,7 +23,6 @@ class NotificationsScreen extends StatelessWidget {
     final t = AppText.of(context);
 
     final controller = context.watch<NotificationController>();
-    final isMechanic = context.watch<AuthController>().user?.isMechanic == true;
 
     return Scaffold(
       appBar: GradientAppBar(
@@ -76,7 +73,7 @@ class NotificationsScreen extends StatelessWidget {
 
                   return _NotificationTile(
                     notification: notification,
-                    onTap: () => _open(context, notification, isMechanic),
+                    onTap: () => _open(context, notification),
                     onDismiss: () => controller.remove(notification),
                   );
                 },
@@ -85,26 +82,13 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  void _open(
-    BuildContext context,
-    AppNotification notification,
-    bool isMechanic,
-  ) {
+  void _open(BuildContext context, AppNotification notification) {
     context.read<NotificationController>().markRead(notification);
 
-    final id = notification.entityId;
-
-    // Only job notifications have a screen to open. A booking update is fully
-    // described by its own text, and the home screen already lists bookings.
-    if (id == null || notification.kind != 'job') return;
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => isMechanic
-            ? MechanicJobDetailScreen(jobId: id)
-            : CustomerJobDetailScreen(jobId: id),
-      ),
-    );
+    // Which kinds have a screen, and which screen, is AppNavigator's decision
+    // — the same one a push tap goes through. It lived here alone until push
+    // existed, which would have meant a tapped push opening nothing.
+    AppNavigator.openNotification(notification.entityId, notification.kind);
   }
 }
 

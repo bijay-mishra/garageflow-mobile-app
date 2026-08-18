@@ -1,15 +1,32 @@
 import '../core/api_client.dart';
 import '../models/app_notification.dart';
 
-/// The in-app notification feed.
+/// The in-app notification feed, and this handset's push registration.
 ///
-/// Pull, not push: this is polled while the app is open. Nothing arrives while
-/// it is closed, which is the deliberate trade for needing no Firebase project,
-/// no device tokens and no credentials to run.
+/// The feed is polled while the app is open; push covers the rest. They are the
+/// same rows either way — the server writes a notification and sends a copy
+/// through FCM — so the bell and the tray never disagree about what happened,
+/// and a phone that cannot register for push still sees everything on opening
+/// the app.
 class NotificationApi {
   NotificationApi(this._api);
 
   final ApiClient _api;
+
+  /// Files this handset against the signed-in account, so the server can push
+  /// to it. Safe to repeat — the server upserts on the token.
+  Future<void> registerDevice(String token, String platform) =>
+      _api.post<dynamic>(
+        '/notifications/device',
+        body: {'token': token, 'platform': platform},
+      );
+
+  /// Stops push to this handset, on sign-out.
+  ///
+  /// The token goes in the query rather than the path: it is about 160
+  /// characters of base64url and belongs nowhere near a URL segment.
+  Future<void> unregisterDevice(String token) =>
+      _api.delete<dynamic>('/notifications/device', query: {'token': token});
 
   Future<NotificationFeed> feed({bool unreadOnly = false}) async {
     final data = await _api.get<Map<String, dynamic>>(

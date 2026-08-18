@@ -53,6 +53,43 @@ Any host you point at over plain HTTP must also be listed in
 `ios/Runner/Info.plist` for iOS), or the request never leaves the phone and the
 failure reads like a dead network rather than a blocked one.
 
+## Continue with Google
+
+Off unless a client ID is compiled in, and *silently* off: the button, the
+"or continue with email" divider and the space around them all disappear
+together, so a build without the flag looks like an app that never had the
+feature rather than one with something broken in it.
+
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=http://localhost:5100 \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=848081241872-cvgj8m47gh0kj959qoskak8pq1bmclip.apps.googleusercontent.com
+```
+
+That is the **Web** client, not the Android one, and the distinction is the
+single thing most likely to cost you an afternoon. The Android client
+(`...-83p0j954...`) is matched by package name plus SHA-1 and never appears in
+code; the Web client is what the ID token is minted for, which is what the API
+checks the audience against. Passing the Android id here returns no ID token at
+all.
+
+Both ids are registered in the API's `GoogleAuth:ClientIds`. Neither is a
+secret — the Web client's *secret* is unused by this flow and must not be
+committed. Register both SHA-1s on the Android client, debug and release, or the
+flow works in one build and not the other:
+
+```
+debug     4B:46:A7:5F:4D:13:4F:43:79:C9:75:0D:4E:4D:53:96:64:A3:26:4A
+release   9D:D1:E9:07:C4:59:C5:C7:9B:5A:D1:FB:4A:EA:AE:7D:C4:46:FF:F9
+```
+
+While the OAuth consent screen is in **Testing**, only accounts on its test-user
+list can sign in — everyone else is refused before the app sees anything.
+
+The button shows on the customer side only. Staff accounts are issued by their
+workshop and a Google account proves an email address rather than employment, so
+`AuthController.GoogleSignIn` refuses anyone who is not a customer.
+
 ## Signing in
 
 Three fields, same as the dashboard. Company code is easy to miss.

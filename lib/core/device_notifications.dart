@@ -11,18 +11,18 @@ import '../models/app_notification.dart';
 /// opening the app and looking, which is the opposite of what a notification is
 /// for.
 ///
-/// This is the missing half, and it is deliberately the small half:
+/// This is the drawing half, and it is deliberately the small half: it renders
+/// a notification somebody else has already decided to show. Two callers do
+/// that deciding, and the split matters when one of them looks broken:
 ///
-/// * It shows notifications the app has **already fetched**. There is no push
-///   service behind it, no Firebase project, no server key, and nothing to
-///   configure per environment.
-/// * It therefore cannot wake a killed app. Android will not start a process
-///   on behalf of a timer that is no longer running. Alerts arrive while the
-///   app is alive — open, or backgrounded and not yet reclaimed.
+/// * the poll in NotificationController, for anything found while the app is
+///   open; and
+/// * [PushMessaging], for a message FCM delivered while the app was on screen —
+///   Android draws nothing itself in that case, by design.
 ///
-/// The gap is real and closing it needs FCM. When that lands, this class is
-/// what displays its foreground messages and [_channel] is the channel it posts
-/// to, so nothing here is throwaway work.
+/// A push arriving with the app closed or backgrounded never reaches this
+/// class at all. Android draws that one from the payload without running any
+/// Dart, which is the whole reason push exists alongside the poll.
 class DeviceNotifications {
   DeviceNotifications._();
 

@@ -153,7 +153,11 @@ class ApiClient {
   Future<T> put<T>(String path, {Object? body}) =>
       _send<T>(() => _dio.put(path, data: body));
 
-  Future<T> delete<T>(String path) => _send<T>(() => _dio.delete(path));
+  /// [query] is for the few deletes that identify their target by value rather
+  /// than by id in the path — unregistering a push token is the one that needs
+  /// it, because the token is 160 characters and does not belong in a URL path.
+  Future<T> delete<T>(String path, {Map<String, dynamic>? query}) =>
+      _send<T>(() => _dio.delete(path, queryParameters: _clean(query)));
 
   /// Multipart upload — one file plus optional text fields.
   Future<T> upload<T>(

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../core/api_exception.dart';
 import '../core/config.dart';
 import '../core/device_notifications.dart';
+import '../core/push_messaging.dart';
 import '../models/app_notification.dart';
 import '../services/notification_service.dart';
 
@@ -60,6 +61,17 @@ class NotificationController extends ChangeNotifier {
   Future<void> _begin() async {
     await refresh();
     await DeviceNotifications.requestPermission();
+
+    // Files this handset against the account that just signed in, so the server
+    // has somewhere to push to. Deliberately after the first refresh: it needs
+    // a live session, and it must not delay the feed the user is looking at.
+    await PushMessaging.registerFor(_api);
+
+    // A tap that launched the app from cold never reaches onMessageOpenedApp —
+    // the listener is attached long after the tap happened. Replayed here
+    // rather than at startup because it opens a job screen, and doing that
+    // before anyone has signed in would push it over the login form.
+    await PushMessaging.handleLaunchNotification();
   }
 
   void stop() {
@@ -188,6 +200,11 @@ class NotificationController extends ChangeNotifier {
     _alerted.clear();
     _seeded = false;
     unawaited(DeviceNotifications.clearAll());
+
+    // The token belongs to the phone, not the person. Left registered, the next
+    // account to sign in here would keep receiving the last one's job updates.
+    unawaited(PushMessaging.unregister());
+
     notifyListeners();
   }
 

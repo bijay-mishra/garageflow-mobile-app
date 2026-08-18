@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "20770063121",
+    "project_id": "garageflow-a37b2",
+    "storage_bucket": "garageflow-a37b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20770063121:android:02d0c89487e8f89d09c2b0",
+        "android_client_info": {
+          "package_name": "com.codecraft.garageflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOVrmVMPcRyhVvVXXtjTE96lGK-rDpcKA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/app_navigator.dart';
 import 'core/formatters.dart';
 import 'core/i18n.dart';
 import 'core/theme.dart';
@@ -31,6 +32,9 @@ class GarageFlowApp extends StatelessWidget {
     Fmt.language = settings.languageCode;
 
     return MaterialApp(
+      // Reachable from the static notification-tap callbacks, which have no
+      // BuildContext of their own — see AppNavigator.
+      navigatorKey: AppNavigator.key,
       title: 'GarageFlow',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
