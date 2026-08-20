@@ -199,6 +199,7 @@ class CustomerService {
     required DateTime preferredDate,
     String preferredTime = '',
     List<String> serviceIds = const [],
+    bool isUrgent = false,
   }) async {
     final data = await _api.post<Map<String, dynamic>>(
       '/bookings',
@@ -209,11 +210,28 @@ class CustomerService {
         // a full ISO timestamp would carry a timezone that could shift the day.
         'preferredDate': Fmt.isoDate(preferredDate),
         'preferredTime': preferredTime.trim(),
+        // A flag, never an amount. The fee is the server's to decide; sending
+        // a number would be the app naming its own price.
+        'isUrgent': isUrgent,
         'serviceIds': serviceIds,
       },
     );
 
     return Booking.fromJson(data);
+  }
+
+  /// What the priority option costs here, or that it is not on offer.
+  ///
+  /// A failure is not thrown on: the booking screen has to draw either way, and
+  /// a customer who cannot reach this endpoint should still be able to describe
+  /// a fault. They lose the option, not the screen.
+  Future<BookingOptions> bookingOptions() async {
+    try {
+      final data = await _api.get<Map<String, dynamic>>('/bookings/options');
+      return BookingOptions.fromJson(data);
+    } on ApiException {
+      return BookingOptions.unavailable;
+    }
   }
 
   Future<Booking> cancelBooking(String id) async {

@@ -22,7 +22,7 @@ import 'book_service_screen.dart';
 import 'customer_job_detail_screen.dart';
 import 'garage_directory_screen.dart';
 import 'handover_sheet.dart';
-import 'support_screen.dart';
+import '../../widgets/support_action.dart';
 import 'track_delivery_screen.dart';
 
 /// The customer's home: is my car ready, and when.
@@ -297,13 +297,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ),
                 // On the screen people land on, because the question they want
                 // to ask is almost always about something they can see here.
-                HeaderAction(
-                  icon: Icons.support_agent_rounded,
-                  tooltip: t('support.title'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SupportScreen()),
-                  ),
-                ),
+                // Badged now: a reply from the garage was previously invisible
+                // until you thought to open the chat and look.
+                const SupportAction(),
                 // Last, so the bell is the rightmost thing on the screen —
                 // where a phone user reaches for it without looking.
                 const AlertsAction(),
@@ -763,6 +759,35 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (booking.isUrgent) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.violet.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.bolt_rounded,
+                      size: 13,
+                      color: AppTheme.violet,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      t('booking.urgentChip'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.violet,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             StatusChip(booking.status, dense: true),
           ],
         ),
@@ -775,6 +800,63 @@ class _BookingCard extends StatelessWidget {
             height: 1.35,
           ),
         ),
+
+        // Where they are in the line. The question this card is opened to
+        // answer, and until now the only place it was known was the workshop's
+        // own screen.
+        if (booking.isQueued) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+            decoration: BoxDecoration(
+              color: booking.queuePosition == 1
+                  ? AppTheme.emerald.withValues(alpha: 0.10)
+                  : palette.field,
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  booking.queuePosition == 1
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.people_alt_outlined,
+                  size: 15,
+                  color: booking.queuePosition == 1
+                      ? AppTheme.emerald
+                      : palette.faint,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    booking.queuePosition == 1
+                        ? t('booking.queueNext')
+                        : t('booking.queuePosition', [
+                            '${booking.queuePosition}',
+                            '${booking.queueTotal}',
+                          ]),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: booking.queuePosition == 1
+                          ? AppTheme.emerald
+                          : palette.muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // The fee is named rather than folded into a total, because it is the
+        // one line on the bill the customer chose to put there.
+        if (booking.isUrgent && booking.urgentFee > 0) ...[
+          const SizedBox(height: 6),
+          Text(
+            t('booking.queueFeeOnBill', [Fmt.rs(booking.urgentFee)]),
+            style: TextStyle(fontSize: 11.5, color: palette.faint),
+          ),
+        ],
         if (booking.preferredTime.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(

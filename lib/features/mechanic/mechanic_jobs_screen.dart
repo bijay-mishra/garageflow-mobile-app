@@ -9,6 +9,7 @@ import '../../models/job.dart';
 import '../../services/mechanic_service.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/gradient_header.dart';
+import '../../widgets/support_action.dart';
 import '../../widgets/states.dart';
 import '../../widgets/stat_tile.dart';
 import '../../widgets/status_chip.dart';
@@ -105,6 +106,10 @@ class _MechanicJobsScreenState extends State<MechanicJobsScreen> {
                     ),
                   ),
                 ),
+                // Ask the office. Same control the customer app puts on its home
+                // screen, and the server routes it by role — a mechanic's
+                // question reaches their own workshop rather than the platform.
+                const SupportAction(),
                 HeaderAction(
                   icon: Icons.refresh_rounded,
                   tooltip: t('common.refresh'),

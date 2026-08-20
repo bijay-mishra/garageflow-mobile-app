@@ -13,6 +13,16 @@ class SupportService {
   final ApiClient _api;
 
   /// This customer's own conversations, newest first.
+  /// How many of my conversations have a reply I have not opened.
+  ///
+  /// A count rather than the threads themselves: this is polled to draw one
+  /// badge, and fetching every conversation to render a number would be the
+  /// expensive way to do it.
+  Future<int> unread() async {
+    final data = await _api.get<int>('/support/unread');
+    return data;
+  }
+
   Future<List<SupportThread>> threads() async {
     final data = await _api.get<List<dynamic>>('/support/threads');
 

@@ -28,6 +28,10 @@ class Booking {
     required this.respondedAt,
     this.services = const [],
     this.estimatedTotal = 0,
+    this.isUrgent = false,
+    this.urgentFee = 0,
+    this.queuePosition,
+    this.queueTotal = 0,
   });
 
   final String id;
@@ -58,6 +62,30 @@ class Booking {
   /// Sum of the quoted extras. The complaint itself is deliberately unpriced:
   /// nobody can quote a knocking noise before they have looked at it.
   final double estimatedTotal;
+
+  /// Paid the priority fee to skip the queue.
+  final bool isUrgent;
+
+  /// What skipping the queue cost. Zero on an ordinary booking.
+  ///
+  /// Added to the bill when the workshop opens the job card, not taken up
+  /// front — so a workshop that cannot fit you in has taken no money to
+  /// give back.
+  final double urgentFee;
+
+  /// Place in the workshop's queue, counting from 1.
+  ///
+  /// Null once the booking is no longer waiting. Worked out by the server
+  /// across every booking in the queue, so it moves when other people's
+  /// bookings are dealt with rather than being a number frozen at booking
+  /// time.
+  final int? queuePosition;
+
+  /// How many bookings are in that queue altogether.
+  final int queueTotal;
+
+  /// Still in the line, so the position means something.
+  bool get isQueued => queuePosition != null;
 
   /// Still awaiting an answer or waiting to happen — the customer can cancel.
   bool get isOpen => status == 'Requested' || status == 'Confirmed';
@@ -97,5 +125,32 @@ class Booking {
         .map((e) => BookedService.fromJson(e as Map<String, dynamic>))
         .toList(),
     estimatedTotal: (json['estimatedTotal'] as num?)?.toDouble() ?? 0,
+    isUrgent: json['isUrgent'] as bool? ?? false,
+    urgentFee: (json['urgentFee'] as num?)?.toDouble() ?? 0,
+    queuePosition: (json['queuePosition'] as num?)?.toInt(),
+    queueTotal: (json['queueTotal'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// What the priority option costs, as the server reports it.
+///
+/// Fetched rather than built into the app: a price baked into an APK is wrong
+/// for everybody who has not updated it. [urgentAvailable] is the same decision
+/// the server makes when a booking arrives, so an app offering the option and a
+/// server ignoring it cannot disagree.
+class BookingOptions {
+  const BookingOptions({this.urgentFee = 0, this.urgentAvailable = false});
+
+  final double urgentFee;
+  final bool urgentAvailable;
+
+  /// What is assumed when the request fails. Not offering the option costs a
+  /// customer a choice; offering one at a price we could not read would put a
+  /// number on screen that nobody is held to.
+  static const unavailable = BookingOptions();
+
+  factory BookingOptions.fromJson(Map<String, dynamic> json) => BookingOptions(
+    urgentFee: (json['urgentFee'] as num?)?.toDouble() ?? 0,
+    urgentAvailable: json['urgentAvailable'] as bool? ?? false,
   );
 }

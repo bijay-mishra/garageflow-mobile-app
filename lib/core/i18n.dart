@@ -689,6 +689,25 @@ const Map<String, String> _en = {
       'The repair itself is quoted after the workshop has looked at it.',
   'booking.submit': 'Request booking',
 
+  // ── The queue ──────────────────────────────────────────────────────────────
+  'booking.howSoon': 'How soon do you need it?',
+  'booking.queueTitle': 'Join the queue',
+  'booking.queueFree': 'Free',
+  'booking.queueBlurb':
+      'The workshop takes vehicles in the order they were booked. You will be '
+          'told when your turn comes round.',
+  'booking.urgentTitle': 'Skip the queue',
+  'booking.urgentBlurb':
+      'Your vehicle goes to the front, ahead of everyone waiting. The fee is '
+          'added to your final bill — nothing is charged now, and nothing is '
+          'charged at all if the workshop cannot take it.',
+  'booking.urgentAdded': 'Priority booking fee',
+  'booking.total': 'Added to your bill',
+  'booking.urgentChip': 'Urgent',
+  'booking.queuePosition': 'Number {0} of {1} in the queue',
+  'booking.queueNext': 'You are next — the workshop takes yours next.',
+  'booking.queueFeeOnBill': '{0} priority fee goes on your bill.',
+
   // ── Paying ─────────────────────────────────────────────────────────────────
   'pay.title': 'Pay this bill',
   'pay.amountDue': 'Amount due',
@@ -1460,6 +1479,24 @@ const Map<String, String> _ne = {
   'booking.repairQuoted':
       'मर्मतको मूल्य वर्कशपले सवारी हेरेपछि मात्र तय हुन्छ।',
   'booking.submit': 'बुकिङ अनुरोध गर्नुहोस्',
+
+  'booking.howSoon': 'कति चाँडो चाहिन्छ?',
+  'booking.queueTitle': 'पालोमा बस्नुहोस्',
+  'booking.queueFree': 'निःशुल्क',
+  'booking.queueBlurb':
+      'वर्कशपले बुकिङ भएकै क्रममा सवारी लिन्छ। तपाईंको पालो आएपछि खबर '
+          'गरिनेछ।',
+  'booking.urgentTitle': 'पालो नकुरी अगाडि',
+  'booking.urgentBlurb':
+      'तपाईंको सवारी पर्खिरहेका सबैभन्दा अगाडि जान्छ। यो शुल्क अन्तिम बिलमा '
+          'थपिन्छ — अहिले केही तिर्नु पर्दैन, र वर्कशपले लिन नसके केही पनि '
+          'लाग्दैन।',
+  'booking.urgentAdded': 'प्राथमिकता शुल्क',
+  'booking.total': 'बिलमा थपिने',
+  'booking.urgentChip': 'जरुरी',
+  'booking.queuePosition': 'पालोमा {1} मध्ये {0} नम्बर',
+  'booking.queueNext': 'तपाईं नै अर्को हुनुहुन्छ — वर्कशपले तपाईंकै लिन्छ।',
+  'booking.queueFeeOnBill': '{0} प्राथमिकता शुल्क बिलमा थपिन्छ।',
 
   'pay.title': 'यो बिल तिर्नुहोस्',
   'pay.amountDue': 'तिर्नुपर्ने रकम',

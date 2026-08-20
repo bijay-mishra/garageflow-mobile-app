@@ -5,6 +5,7 @@ import '../../core/api_exception.dart';
 import '../../core/formatters.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../../models/booking.dart';
 import '../../models/service.dart';
 import '../../models/vehicle.dart';
 import '../../services/catalogue_service.dart';
@@ -36,6 +37,13 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   String _time = 'Morning';
   bool _saving = false;
 
+  /// Whether the customer chose to pay to skip the queue, and what that costs.
+  ///
+  /// The fee comes from the server rather than a constant here, so raising it
+  /// does not need a new release, and the number shown is the number charged.
+  bool _urgent = false;
+  BookingOptions _options = BookingOptions.unavailable;
+
   /// The extras on offer for the chosen vehicle, and what has been ticked.
   ///
   /// Reloaded when the vehicle changes: a bike wash and a heavy vehicle wash
@@ -54,14 +62,34 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   Vehicle get _vehicle =>
       widget.vehicles.firstWhere((v) => v.id == _vehicleId);
 
-  double get _estimate => _extras
+  double get _extrasTotal => _extras
       .where((s) => _chosen.contains(s.id))
       .fold(0.0, (sum, s) => sum + s.price);
+
+  double get _urgentFee => _urgent ? _options.urgentFee : 0;
+
+  /// Everything this booking will add to the bill before anyone looks at the
+  /// vehicle. The repair itself is not in here and is not meant to be.
+  double get _estimate => _extrasTotal + _urgentFee;
 
   @override
   void initState() {
     super.initState();
     _loadExtras();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    final options = await context.read<CustomerService>().bookingOptions();
+
+    if (!mounted) return;
+
+    setState(() {
+      _options = options;
+      // A workshop that turns the option off between opening this screen and
+      // it loading must not leave a fee ticked that the server will ignore.
+      if (!options.urgentAvailable) _urgent = false;
+    });
   }
 
   @override
@@ -129,6 +157,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
         preferredDate: _date,
         preferredTime: _time,
         serviceIds: _chosen.toList(),
+        isUrgent: _urgent,
       );
 
       if (mounted) Navigator.pop(context, true);
@@ -249,6 +278,33 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
             ],
           ),
 
+          // Only when the workshop actually sells it. A shop that has taken the
+          // option off gets the old screen back, rather than a greyed-out card
+          // asking about something it does not do.
+          if (_options.urgentAvailable) ...[
+            const SizedBox(height: 22),
+            _Label(t('booking.howSoon')),
+            const SizedBox(height: 10),
+            _QueueOption(
+              title: t('booking.queueTitle'),
+              blurb: t('booking.queueBlurb'),
+              price: t('booking.queueFree'),
+              icon: Icons.people_alt_outlined,
+              selected: !_urgent,
+              onTap: () => setState(() => _urgent = false),
+            ),
+            const SizedBox(height: 8),
+            _QueueOption(
+              title: t('booking.urgentTitle'),
+              blurb: t('booking.urgentBlurb'),
+              price: Fmt.rs(_options.urgentFee),
+              icon: Icons.bolt_rounded,
+              accent: AppTheme.violet,
+              selected: _urgent,
+              onTap: () => setState(() => _urgent = true),
+            ),
+          ],
+
           const SizedBox(height: 22),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -356,23 +412,27 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
             // Only shown once something is ticked. A permanent "Rs 0" on a
             // screen whose main job is describing a fault reads as a price for
             // the repair, which is exactly what it is not.
-            if (_chosen.isNotEmpty) ...[
-              Row(
-                children: [
-                  Text(
-                    t('home.extrasEstimate'),
-                    style: TextStyle(fontSize: 13, color: palette.faint),
-                  ),
-                  const Spacer(),
-                  Text(
-                    Fmt.rs(_estimate),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: palette.text,
-                    ),
-                  ),
-                ],
+            if (_chosen.isNotEmpty || _urgent) ...[
+              // The two are listed apart before they are added up. A customer
+              // who ticked a wash and then chose priority should be able to see
+              // which number is which, rather than one total they have to work
+              // backwards from.
+              if (_chosen.isNotEmpty)
+                _TotalRow(
+                  label: t('home.extrasEstimate'),
+                  value: Fmt.rs(_extrasTotal),
+                ),
+              if (_urgent)
+                _TotalRow(
+                  label: t('booking.urgentAdded'),
+                  value: Fmt.rs(_urgentFee),
+                  accent: AppTheme.violet,
+                ),
+              if (_chosen.isNotEmpty && _urgent) const Divider(height: 14),
+              _TotalRow(
+                label: t('booking.total'),
+                value: Fmt.rs(_estimate),
+                strong: true,
               ),
               const SizedBox(height: 4),
               Text(
@@ -490,5 +550,159 @@ class _VehicleOption extends StatelessWidget {
       ),
     ),
   );
+  }
+}
+
+/// One line of the running total in the bottom bar.
+class _TotalRow extends StatelessWidget {
+  const _TotalRow({
+    required this.label,
+    required this.value,
+    this.accent,
+    this.strong = false,
+  });
+
+  final String label;
+  final String value;
+  final Color? accent;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
+              color: accent ?? (strong ? palette.text : palette.faint),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: strong ? 16 : 13.5,
+              fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+              color: accent ?? (strong ? palette.text : palette.muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Queue or skip it — one of two cards, only one of which can be chosen.
+///
+/// Cards rather than a switch. A switch would make the free option the absence
+/// of a choice, and what is being decided here is worth reading before it is
+/// answered: one of these costs money and the other does not.
+class _QueueOption extends StatelessWidget {
+  const _QueueOption({
+    required this.title,
+    required this.blurb,
+    required this.price,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.accent = AppTheme.brand,
+  });
+
+  final String title;
+  final String blurb;
+  final String price;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppTheme.of(context);
+
+    return Material(
+      color: selected ? accent.withValues(alpha: 0.06) : palette.card,
+      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            border: Border.all(
+              color: selected ? accent : palette.border,
+              width: selected ? 1.6 : 1,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: selected ? accent : palette.faint,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: selected ? accent : palette.text,
+                            ),
+                          ),
+                        ),
+                        // The price sits on the same line as the name, so the
+                        // two options can be compared without reading either
+                        // paragraph.
+                        Text(
+                          price,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: selected ? accent : palette.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      blurb,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: palette.faint,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected ? accent : palette.border,
+                size: 21,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

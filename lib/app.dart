@@ -15,6 +15,7 @@ import 'features/profile/lock_gate.dart';
 import 'widgets/states.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
+import 'state/support_controller.dart';
 import 'state/settings_controller.dart';
 
 class GarageFlowApp extends StatelessWidget {
@@ -76,10 +77,11 @@ class AuthGate extends StatelessWidget {
     // Polling belongs to a signed-in session. Started and stopped here so it
     // cannot outlive one and start firing 401s after sign-out.
     final notifications = context.read<NotificationController>();
+    final support = context.read<SupportController>();
 
     return switch (auth.status) {
       AuthStatus.checking => const SplashScreen(),
-      AuthStatus.signedOut => _stopPolling(notifications, const LoginScreen()),
+      AuthStatus.signedOut => _stopPolling(notifications, support, const LoginScreen()),
       // The lock wraps only the signed-in shells. Locking the login screen
       // would leave anyone whose fingerprint stopped working with no way in.
       // Signed in, but still on a password somebody else typed. The shell is
@@ -88,6 +90,7 @@ class AuthGate extends StatelessWidget {
       // permission". Polling stays off for the same reason.
       AuthStatus.signedIn when auth.mustSetPassword => _stopPolling(
         notifications,
+        support,
         const SetPasswordScreen(),
       ),
 
@@ -95,7 +98,7 @@ class AuthGate extends StatelessWidget {
         child: _announceDeletionCancelled(
           context,
           auth,
-          _startPolling(notifications, _shellFor(auth)),
+          _startPolling(notifications, support, _shellFor(auth)),
         ),
       ),
     };
@@ -138,15 +141,29 @@ class AuthGate extends StatelessWidget {
     return const CustomerShell();
   }
 
-  Widget _startPolling(NotificationController controller, Widget child) {
+  Widget _startPolling(
+    NotificationController controller,
+    SupportController support,
+    Widget child,
+  ) {
     // Deferred to after this frame: start() notifies listeners, and doing that
     // during a build is exactly the "setState during build" error.
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.start());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.start();
+      support.start();
+    });
     return child;
   }
 
-  Widget _stopPolling(NotificationController controller, Widget child) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => controller.reset());
+  Widget _stopPolling(
+    NotificationController controller,
+    SupportController support,
+    Widget child,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.reset();
+      support.reset();
+    });
     return child;
   }
 }

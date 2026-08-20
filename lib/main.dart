@@ -23,6 +23,7 @@ import 'services/notification_service.dart';
 import 'services/plans_service.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
+import 'state/support_controller.dart';
 import 'state/settings_controller.dart';
 
 /// Runs in its own isolate when a push arrives with the app closed.
@@ -117,6 +118,12 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) =>
               NotificationController(context.read<NotificationApi>()),
+        ),
+        // The unread count on the chat icon. Separate from the bell: a reply
+        // from the office and a job update are different things to be told
+        // about, and one badge for both would be wrong about each of them.
+        ChangeNotifierProvider(
+          create: (context) => SupportController(context.read<SupportService>()),
         ),
       ],
       child: const GarageFlowApp(),
