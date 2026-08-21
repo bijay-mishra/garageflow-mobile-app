@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:garageflow_mobile/app.dart';
 import 'package:garageflow_mobile/core/api_client.dart';
+import 'package:garageflow_mobile/services/app_release_service.dart';
+import 'package:garageflow_mobile/services/support_service.dart';
+import 'package:garageflow_mobile/state/support_controller.dart';
 import 'package:garageflow_mobile/core/formatters.dart';
 import 'package:garageflow_mobile/core/i18n.dart';
 import 'package:garageflow_mobile/core/theme.dart';
@@ -223,6 +226,12 @@ void main() {
           Provider(create: (_) => NotificationApi(api)),
           Provider(create: (_) => DirectoryService(api)),
           Provider(create: (_) => DeliveryApi(api)),
+          // These two mirror main.dart. The list has to stay a copy of it:
+          // GarageFlowApp resolves what it needs from whatever is above it, so
+          // a service added to the app and forgotten here fails as a
+          // ProviderNotFoundException in this test and nowhere else.
+          Provider(create: (_) => SupportService(api)),
+          Provider(create: (_) => AppReleaseService(api)),
           ChangeNotifierProvider(
             create: (context) => AuthController(
               api: api,
@@ -234,6 +243,9 @@ void main() {
           ChangeNotifierProvider(
             create: (context) =>
                 NotificationController(context.read<NotificationApi>()),
+          ),
+          ChangeNotifierProvider(
+            create: (context) => SupportController(context.read<SupportService>()),
           ),
         ],
         child: const GarageFlowApp(),

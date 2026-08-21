@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_update.dart';
 import '../../core/config.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
@@ -41,7 +42,7 @@ class FeedbackScreen extends StatelessWidget {
       '',
       '',
       '---',
-      '${t('feedback.appVersion')}: GarageFlow 1.0.0',
+      '${t('feedback.appVersion')}: GarageFlow ${AppUpdate.installedLabel}',
       '${t('feedback.role')}: ${user?.role ?? '—'}',
       'Server: ${AppConfig.apiBaseUrl}',
     ].join('\n');
@@ -130,7 +131,7 @@ class FeedbackScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Line(t('feedback.appVersion'), 'GarageFlow 1.0.0'),
+                _Line(t('feedback.appVersion'), 'GarageFlow ${AppUpdate.installedLabel}'),
                 _Line(t('feedback.role'), user?.role ?? '—'),
                 _Line('Server', AppConfig.apiBaseUrl),
                 const SizedBox(height: 10),

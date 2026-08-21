@@ -3,7 +3,7 @@ description: >-
   GarageFlow for phones. One app, two audiences: mechanics work the jobs
   assigned to them, customers book services and follow their vehicle.
 publish_to: "none"
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: ^3.12.2
@@ -95,6 +95,15 @@ dependencies:
   share_plus: ^12.0.2
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
+
+  # The app's own version and build number, read from the bundle at runtime.
+  #
+  # Needed because the update prompt has to compare what is installed against
+  # what the server says is current, and the alternative — a constant kept in
+  # Dart — is a number somebody has to remember to bump twice. It drifts on the
+  # first release where they forget, and the symptom is an app that either
+  # nags forever or never nags at all.
+  package_info_plus: ^8.1.2
 
 dev_dependencies:
   flutter_test:

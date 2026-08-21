@@ -182,6 +182,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       if (!await _addVehicle() || !mounted) return;
     }
 
+    // And no workshop to book *at*. This is the one screen in the app that
+    // cannot work without one — a booking is a request to a particular garage
+    // — so this is where the directory is asked for, rather than at the door
+    // on the way in.
+    //
+    // The same shape as the vehicle step above, and for the same reason: a
+    // sentence saying why, the screen that fixes it, then straight on into
+    // what was originally pressed. Nothing here is a dead end.
+    if (!await _ensureGarage() || !mounted) return;
+
     final booked = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => BookServiceScreen(vehicles: _vehicles),
@@ -192,6 +202,33 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       await _load();
       if (mounted) showSnack(context, t('home.bookingRequested'));
     }
+  }
+
+  /// Makes sure this customer has a garage, sending them to pick one if not.
+  ///
+  /// Returns false when they backed out, in which case the caller stops — they
+  /// changed their mind about booking, which is an ordinary thing to do and
+  /// not something to show an error about.
+  ///
+  /// Reloads on the way back because joining moves everything: the account now
+  /// has a workshop, and the vehicles the server was holding as drafts become
+  /// real rows at that garage. Without this the booking screen would be handed
+  /// the draft ids it was given before the join.
+  Future<bool> _ensureGarage() async {
+    final auth = context.read<AuthController>();
+    if (!auth.needsGarage) return true;
+
+    final t = AppText.of(context);
+    showSnack(context, t('home.noGarageSnack'));
+
+    final joined = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const GarageDirectoryScreen()),
+    );
+
+    if (joined != true || !mounted) return false;
+
+    await _load();
+    return mounted && !context.read<AuthController>().needsGarage;
   }
 
   Future<void> _cancelBooking(Booking booking) async {

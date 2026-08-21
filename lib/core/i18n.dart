@@ -589,8 +589,20 @@ const Map<String, String> _en = {
   'fuel.CNG': 'CNG',
 
   // ── Customer home dialogs ──────────────────────────────────────────────────
+  // ── Update prompt ──────────────────────────────────────────────────────────
+  'update.title': 'Update available',
+  'update.body':
+      'Version {0} is out. Updating takes a moment and keeps everything working.',
+  'update.requiredTitle': 'Update required',
+  'update.requiredBody':
+      'This version is too old to keep using. Please update to carry on.',
+  'update.later': 'Remind me later',
+  'update.now': 'Update now',
+
   'home.noVehiclesSnack':
       'Add a vehicle first — then you can book a service for it.',
+  'home.noGarageSnack':
+      'Choose the garage you want to book with — then pick your service.',
   'home.bookingRequested': 'Booking requested.',
   'home.cancelTitle': 'Cancel booking?',
   'home.cancelBody': 'Your booking for {0} on {1} will be cancelled.',
@@ -1388,8 +1400,19 @@ const Map<String, String> _ne = {
   'fuel.Hybrid': 'हाइब्रिड',
   'fuel.CNG': 'सीएनजी',
 
+  'update.title': 'नयाँ अपडेट उपलब्ध',
+  'update.body':
+      'संस्करण {0} आयो। अपडेट गर्दा सबै कुरा राम्ररी चल्छ।',
+  'update.requiredTitle': 'अपडेट अनिवार्य',
+  'update.requiredBody':
+      'यो संस्करण धेरै पुरानो भयो। जारी राख्न अपडेट गर्नुहोस्।',
+  'update.later': 'पछि सम्झाउनुहोस्',
+  'update.now': 'अहिले अपडेट गर्नुहोस्',
+
   'home.noVehiclesSnack':
       'पहिले सवारी थप्नुहोस् — त्यसपछि सर्भिस बुक गर्न सकिन्छ।',
+  'home.noGarageSnack':
+      'बुक गर्न चाहेको ग्यारेज छान्नुहोस् — त्यसपछि सर्भिस छान्नुहोस्।',
   'home.bookingRequested': 'बुकिङ अनुरोध पठाइयो।',
   'home.cancelTitle': 'बुकिङ रद्द गर्ने?',
   'home.cancelBody': '{1} को {0} को बुकिङ रद्द हुनेछ।',

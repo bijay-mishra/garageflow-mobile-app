@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'app.dart';
 import 'core/api_client.dart';
+import 'core/app_update.dart';
 import 'core/device_notifications.dart';
 import 'core/token_storage.dart';
 import 'services/auth_service.dart';
@@ -20,6 +21,7 @@ import 'services/mechanic_service.dart';
 import 'core/app_navigator.dart';
 import 'core/push_messaging.dart';
 import 'services/notification_service.dart';
+import 'services/app_release_service.dart';
 import 'services/plans_service.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
@@ -53,6 +55,11 @@ Future<void> main() async {
   // refresh token, and the server rotates it on use.
   final storage = TokenStorage();
   final api = ApiClient(storage);
+
+  // The app's own version and build number, read once from the bundle. Awaited
+  // here so the update check and the feedback screen can both read it without
+  // a Future — see AppUpdate.load.
+  await AppUpdate.load();
 
   // Prepares the plugin and the Android channel. Not a permission request —
   // that waits until somebody has signed in and there is a reason to give. Safe
@@ -97,6 +104,10 @@ Future<void> main() async {
         Provider(create: (_) => DirectoryService(api)),
         // What GarageFlow costs. Needs no session — a price list is public.
         Provider(create: (_) => PlansService(api)),
+        // Which build of this app is current. Needs no session either, and for
+        // a sharper reason: an app old enough that signing in has stopped
+        // working is the one that most needs to be told to update.
+        Provider(create: (_) => AppReleaseService(api)),
         // Rewards, offers and star ratings. Shared: the customer reads their
         // own card and rates finished work, the mechanic reads their score.
         Provider(create: (_) => LoyaltyService(api)),

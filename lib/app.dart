@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/app_navigator.dart';
+import 'core/app_update.dart';
 import 'core/formatters.dart';
 import 'core/i18n.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/set_password_screen.dart';
 import 'features/auth/splash_screen.dart';
-import 'features/customer/choose_garage_shell.dart';
 import 'features/customer/customer_shell.dart';
 import 'features/mechanic/mechanic_shell.dart';
 import 'features/profile/lock_gate.dart';
 import 'widgets/states.dart';
+import 'services/app_release_service.dart';
 import 'state/auth_controller.dart';
 import 'state/notification_controller.dart';
 import 'state/support_controller.dart';
@@ -56,9 +57,47 @@ class GarageFlowApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         ),
       ),
-      home: const AuthGate(),
+      home: const UpdateCheck(child: AuthGate()),
     );
   }
+}
+
+/// Asks the server whether a newer build exists, once per launch.
+///
+/// Wrapped around [AuthGate] rather than put inside a shell, because the answer
+/// matters before anybody has signed in. An app old enough that logging in has
+/// stopped working is precisely the one that needs the prompt, and a check that
+/// only ran after a successful login would never reach it.
+///
+/// Everything it decides lives in [AppUpdate] — this widget's whole job is to
+/// have a [BuildContext] under the [MaterialApp] and a moment after the first
+/// frame to use it in.
+class UpdateCheck extends StatefulWidget {
+  const UpdateCheck({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<UpdateCheck> createState() => _UpdateCheckState();
+}
+
+class _UpdateCheckState extends State<UpdateCheck> {
+  @override
+  void initState() {
+    super.initState();
+
+    // After the first frame: the dialog needs a route to sit on, and there is
+    // no navigator yet during this build. The round trip that follows also
+    // gives the splash time to resolve, so an optional prompt lands on the app
+    // rather than on a loading screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppUpdate.promptIfAvailable(context, context.read<AppReleaseService>());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Picks the shell from the signed-in role.
@@ -127,16 +166,20 @@ class AuthGate extends StatelessWidget {
 
   /// Which app a signed-in person gets.
   ///
-  /// The third case is the marketplace one: a customer whose account belongs to
-  /// no garage yet. Everything in the customer shell is scoped to one workshop,
-  /// so showing it would mean five tabs of empty states and no explanation. The
-  /// directory *is* their home until they join somewhere — but with an account
-  /// tab beside it, so signing out does not require joining a business first.
-  /// See [ChooseGarageShell].
+  /// Two shells, not three. A customer who has joined no garage yet used to be
+  /// held on the directory until they picked one, on the reasoning that every
+  /// other screen is scoped to a workshop and would be empty without one.
+  ///
+  /// That reasoning was right about the screens and wrong about the order. The
+  /// first thing somebody wants to do after signing up is put their car in —
+  /// which the server now accepts with no garage, holding it as a draft against
+  /// the account — and choosing a workshop is a decision they can only make
+  /// sensibly once they know what they are booking and for which vehicle. So
+  /// the home screen is the landing place for everybody, empty sections and
+  /// all, and the directory is asked for at the one moment it is genuinely
+  /// needed: pressing Book service. See `_book` in CustomerHomeScreen.
   Widget _shellFor(AuthController auth) {
     if (auth.user!.isMechanic) return const MechanicShell();
-
-    if (auth.needsGarage) return const ChooseGarageShell();
 
     return const CustomerShell();
   }
